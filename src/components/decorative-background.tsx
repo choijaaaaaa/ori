@@ -1,4 +1,4 @@
-// 공개 페이지용 장식 배경 — 오리와 음식 모티프로 허전한 배경에 귀여운 느낌을 더한다.
+// 공개 페이지용 장식 배경 — 오리와 음식 모티프를 격자로 반복시켜 패턴처럼 보이게 한다.
 function Duck({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
@@ -17,25 +17,43 @@ function Duck({ className }: { className?: string }) {
   );
 }
 
+const MOTIFS = ["duck", "🍙", "🍜", "🍡", "🍱", "duck", "🍘", "🥟"] as const;
+const COLS = 5;
+const ROWS = 10;
+
+const PATTERN_ITEMS = Array.from({ length: COLS * ROWS }, (_, idx) => {
+  const col = idx % COLS;
+  const row = Math.floor(idx / COLS);
+  const jitterX = ((idx * 13) % 9) - 4; // -4 ~ 4
+  const jitterY = ((idx * 7) % 9) - 4;
+  const left = (col / COLS) * 100 + 100 / COLS / 2 + jitterX;
+  const top = (row / ROWS) * 100 + 100 / ROWS / 2 + jitterY;
+  const rotate = ((idx * 37) % 50) - 25;
+  const scale = 0.75 + ((idx * 11) % 5) * 0.1; // 0.75 ~ 1.15
+  const motif = MOTIFS[idx % MOTIFS.length];
+  return { idx, left, top, rotate, scale, motif };
+});
+
 export function DecorativeBackground() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <Duck className="absolute -left-6 top-8 h-16 w-16 -rotate-12 opacity-[0.15] dark:opacity-[0.08]" />
-      <Duck className="absolute right-2 top-36 h-11 w-11 rotate-6 opacity-[0.12] dark:opacity-[0.06]" />
-      <Duck className="absolute left-[8%] bottom-28 h-20 w-20 rotate-3 opacity-[0.1] dark:opacity-[0.05]" />
-      <Duck className="absolute right-[12%] bottom-10 h-14 w-14 -rotate-6 opacity-[0.12] dark:opacity-[0.06]" />
-      <span className="absolute right-[8%] top-24 rotate-6 text-4xl opacity-[0.18] dark:opacity-[0.1]">
-        🍙
-      </span>
-      <span className="absolute left-[6%] bottom-48 -rotate-6 text-5xl opacity-[0.15] dark:opacity-[0.08]">
-        🍜
-      </span>
-      <span className="absolute right-[22%] bottom-4 text-3xl opacity-[0.18] dark:opacity-[0.1]">
-        🍡
-      </span>
-      <span className="absolute left-[40%] top-6 text-2xl opacity-[0.15] dark:opacity-[0.08]">
-        🍱
-      </span>
+      {PATTERN_ITEMS.map((item) => (
+        <div
+          key={item.idx}
+          className="absolute opacity-[0.4] dark:opacity-[0.22]"
+          style={{
+            left: `${item.left}%`,
+            top: `${item.top}%`,
+            transform: `translate(-50%, -50%) rotate(${item.rotate}deg) scale(${item.scale})`,
+          }}
+        >
+          {item.motif === "duck" ? (
+            <Duck className="h-14 w-14" />
+          ) : (
+            <span className="text-4xl leading-none">{item.motif}</span>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
