@@ -27,3 +27,10 @@ export interface ParticipantNote {
   tags: string[];
   createdAt: string;
 }
+
+export interface Application {
+  id: string;
+  name: string;
+  contact?: string;
+  submittedAt: string;
+}

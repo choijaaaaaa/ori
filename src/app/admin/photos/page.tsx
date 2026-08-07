@@ -62,7 +62,7 @@ export default async function AdminPhotosPage() {
               <li key={photo.id} className="flex flex-col gap-1">
                 <img
                   src={photo.url}
-                  alt={photo.caption ?? "한일교류회 활동 사진"}
+                  alt={photo.caption ?? "日韓交流会の活動写真 / 일한교류회 활동 사진"}
                   className="aspect-square w-full rounded-lg object-cover"
                 />
                 {photo.caption && (

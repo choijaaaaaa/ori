@@ -5,6 +5,7 @@ import type {
   Photo,
   SurveyResponse,
   ParticipantNote,
+  Application,
 } from "./types";
 
 // Supabase로 교체 시 이 인터페이스를 그대로 구현한 리포지토리로 바꿔치기하면 된다.
@@ -24,6 +25,9 @@ export interface DataRepository {
 
   listNotesByParticipant(participantName: string): Promise<ParticipantNote[]>;
   addNote(input: { participantName: string; note: string; tags: string[] }): Promise<ParticipantNote>;
+
+  listApplications(): Promise<Application[]>;
+  createApplication(input: { name: string; contact?: string }): Promise<Application>;
 }
 
 async function readJson<T>(file: string): Promise<T> {
@@ -115,6 +119,24 @@ class JsonFileRepository implements DataRepository {
     };
     items.push(created);
     await writeJson("participant-notes.json", items);
+    return created;
+  }
+
+  async listApplications(): Promise<Application[]> {
+    const items = await readJson<Application[]>("applications.json");
+    return items.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+  }
+
+  async createApplication(input: { name: string; contact?: string }): Promise<Application> {
+    const items = await readJson<Application[]>("applications.json");
+    const created: Application = {
+      id: randomUUID(),
+      name: input.name,
+      contact: input.contact,
+      submittedAt: new Date().toISOString(),
+    };
+    items.push(created);
+    await writeJson("applications.json", items);
     return created;
   }
 }

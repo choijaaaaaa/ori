@@ -3,6 +3,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
+import { DecorativeBackground } from "@/components/decorative-background";
 
 const LEVEL_OPTIONS = [
   { jp: "初級", kr: "초급" },
@@ -57,28 +58,32 @@ export default function SurveyPage() {
 
   if (status === "done") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-amber-50 px-6 py-16 text-center dark:bg-zinc-950">
-        <Bilingual
-          as="h1"
-          className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
-          krClassName="mt-1 text-sm font-normal text-zinc-500 dark:text-zinc-400"
-          jp="送信しました。ありがとうございます。"
-          kr="설문이 제출되었습니다. 감사합니다!"
-        />
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-          貴重なご回答ありがとうございます。次回の交流会でお会いしましょう。
-          <br />
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            소중한 답변 감사드립니다. 다음 모임에서 만나요.
-          </span>
-        </p>
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-amber-50 px-6 py-16 text-center dark:bg-zinc-950">
+        <DecorativeBackground />
+        <div className="relative z-10 flex flex-col items-center">
+          <Bilingual
+            as="h1"
+            className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
+            krClassName="mt-1 text-sm font-normal text-zinc-500 dark:text-zinc-400"
+            jp="送信しました。ありがとうございます。"
+            kr="설문이 제출되었습니다. 감사합니다!"
+          />
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+            貴重なご回答ありがとうございます。次回の交流会でお会いしましょう。
+            <br />
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              소중한 답변 감사드립니다. 다음 모임에서 만나요.
+            </span>
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col bg-amber-50 px-6 py-16 dark:bg-zinc-950">
-      <main className="mx-auto flex w-full max-w-xl flex-col gap-8">
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-amber-50 px-6 py-16 dark:bg-zinc-950">
+      <DecorativeBackground />
+      <main className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-8">
         <div className="flex flex-col gap-2 text-center">
           <Bilingual
             as="h1"

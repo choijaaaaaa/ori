@@ -8,6 +8,7 @@ import { BilingualInline } from "@/components/bilingual";
 
 const NAV_ITEMS = [
   { href: "/admin", jp: "ダッシュボード", kr: "대시보드" },
+  { href: "/admin/applications", jp: "申し込み一覧", kr: "신청 내역" },
   { href: "/admin/announcements", jp: "お知らせ管理", kr: "공지 관리" },
   { href: "/admin/photos", jp: "写真管理", kr: "사진 관리" },
   { href: "/admin/surveys", jp: "アンケート一覧", kr: "설문 목록" },
@@ -40,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen">
       <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-gray-50 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="px-4 py-5 text-sm font-semibold text-gray-900 dark:text-neutral-100">
-          <BilingualInline jp="日韓交流会 管理者" kr="한일교류회 관리자" />
+          <BilingualInline jp="日韓交流会 管理者" kr="일한교류회 관리자" />
         </div>
         <nav aria-label="管理者メニュー / 관리자 메뉴" className="flex flex-1 flex-col gap-1 px-2">
           {NAV_ITEMS.map((item) => {

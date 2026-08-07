@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { repository } from "@/lib/repository";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
+import { DecorativeBackground } from "@/components/decorative-background";
 import type { Announcement, Photo } from "@/lib/types";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(mock 단계 fs 읽기 특성상 필수).
@@ -27,8 +28,9 @@ export default async function Home() {
   const data = await loadHomeData();
 
   return (
-    <div className="flex flex-1 flex-col bg-amber-50 dark:bg-zinc-950">
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-16 px-6 py-16 sm:px-10">
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-amber-50 dark:bg-zinc-950">
+      <DecorativeBackground />
+      <main className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col gap-16 px-6 py-16 sm:px-10">
         <section className="flex flex-col items-center gap-4 text-center">
           <Bilingual
             as="h1"
@@ -51,11 +53,11 @@ export default async function Home() {
             kr="한국어와 일본어, 두 언어와 문화를 잇는 따뜻한 만남의 자리입니다."
           />
           <Link
-            href="/survey"
+            href="/apply"
             className="mt-2 inline-flex items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
-            aria-label="アンケートに参加する / 설문에 참여하기"
+            aria-label="参加を申し込む / 참가 신청하기"
           >
-            <BilingualInline jp="アンケートに参加する" kr="설문 참여하기" />
+            <BilingualInline jp="参加を申し込む" kr="참가 신청하기" />
           </Link>
         </section>
 
