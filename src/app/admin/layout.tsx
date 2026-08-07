@@ -4,13 +4,14 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
+import { BilingualInline } from "@/components/bilingual";
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "대시보드" },
-  { href: "/admin/announcements", label: "공지 관리" },
-  { href: "/admin/photos", label: "사진 관리" },
-  { href: "/admin/surveys", label: "설문 목록" },
-  { href: "/admin/settings", label: "설정" },
+  { href: "/admin", jp: "ダッシュボード", kr: "대시보드" },
+  { href: "/admin/announcements", jp: "お知らせ管理", kr: "공지 관리" },
+  { href: "/admin/photos", jp: "写真管理", kr: "사진 관리" },
+  { href: "/admin/surveys", jp: "アンケート一覧", kr: "설문 목록" },
+  { href: "/admin/settings", jp: "設定", kr: "설정" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -39,9 +40,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen">
       <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-gray-50 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="px-4 py-5 text-sm font-semibold text-gray-900 dark:text-neutral-100">
-          한일교류회 관리자
+          <BilingualInline jp="日韓交流会 管理者" kr="한일교류회 관리자" />
         </div>
-        <nav aria-label="관리자 메뉴" className="flex flex-1 flex-col gap-1 px-2">
+        <nav aria-label="管理者メニュー / 관리자 메뉴" className="flex flex-1 flex-col gap-1 px-2">
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.href === "/admin"
@@ -57,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     : "text-gray-700 hover:bg-gray-200 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 }`}
               >
-                {item.label}
+                <BilingualInline jp={item.jp} kr={item.kr} />
               </Link>
             );
           })}
@@ -67,10 +68,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             type="button"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            aria-label="로그아웃"
+            aria-label="ログアウト / 로그아웃"
             className="w-full rounded-md px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
-            {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+            {isLoggingOut ? (
+              <BilingualInline jp="ログアウト中..." kr="로그아웃 중..." />
+            ) : (
+              <BilingualInline jp="ログアウト" kr="로그아웃" />
+            )}
           </button>
         </div>
       </aside>

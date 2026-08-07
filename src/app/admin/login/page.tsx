@@ -3,6 +3,7 @@
 
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Bilingual, BilingualInline } from "@/components/bilingual";
 
 export default function AdminLoginPage() {
   return (
@@ -33,7 +34,7 @@ function AdminLoginForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrorMessage(data?.error?.message ?? "로그인에 실패했습니다.");
+        setErrorMessage(data?.error?.message ?? "ログインに失敗しました。 (로그인에 실패했습니다.)");
         return;
       }
 
@@ -41,7 +42,7 @@ function AdminLoginForm() {
       router.push(next);
       router.refresh();
     } catch {
-      setErrorMessage("네트워크 오류가 발생했습니다. 다시 시도해주세요.");
+      setErrorMessage("ネットワークエラーが発生しました。もう一度お試しください。 (네트워크 오류가 발생했습니다. 다시 시도해주세요.)");
     } finally {
       setIsSubmitting(false);
     }
@@ -50,16 +51,19 @@ function AdminLoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-neutral-950">
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-        <h1 className="mb-6 text-center text-xl font-semibold text-gray-900 dark:text-neutral-100">
-          관리자 로그인
-        </h1>
+        <Bilingual
+          as="h1"
+          className="mb-6 text-center text-xl font-semibold text-gray-900 dark:text-neutral-100"
+          jp="管理者ログイン"
+          kr="관리자 로그인"
+        />
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="admin-password"
               className="text-sm font-medium text-gray-700 dark:text-neutral-300"
             >
-              비밀번호
+              <BilingualInline jp="パスワード" kr="비밀번호" />
             </label>
             <input
               id="admin-password"
@@ -83,7 +87,11 @@ function AdminLoginForm() {
             disabled={isSubmitting}
             className="mt-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
           >
-            {isSubmitting ? "로그인 중..." : "로그인"}
+            {isSubmitting ? (
+              <BilingualInline jp="ログイン中..." kr="로그인 중..." />
+            ) : (
+              <BilingualInline jp="ログイン" kr="로그인" />
+            )}
           </button>
         </form>
       </div>

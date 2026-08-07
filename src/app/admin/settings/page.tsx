@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Bilingual, BilingualInline } from "@/components/bilingual";
 
 export default function AdminSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -17,7 +18,7 @@ export default function AdminSettingsPage() {
     setSuccessMessage("");
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage("새 비밀번호가 일치하지 않습니다.");
+      setErrorMessage("新しいパスワードが一致しません。 (새 비밀번호가 일치하지 않습니다.)");
       return;
     }
 
@@ -31,16 +32,16 @@ export default function AdminSettingsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrorMessage(data?.error?.message ?? "비밀번호 변경에 실패했습니다.");
+        setErrorMessage(data?.error?.message ?? "パスワードの変更に失敗しました。 (비밀번호 변경에 실패했습니다.)");
         return;
       }
 
-      setSuccessMessage("비밀번호가 변경되었습니다");
+      setSuccessMessage("パスワードが変更されました (비밀번호가 변경되었습니다)");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch {
-      setErrorMessage("네트워크 오류가 발생했습니다. 다시 시도해주세요.");
+      setErrorMessage("ネットワークエラーが発生しました。もう一度お試しください。 (네트워크 오류가 발생했습니다. 다시 시도해주세요.)");
     } finally {
       setIsSubmitting(false);
     }
@@ -48,7 +49,12 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-gray-900 dark:text-neutral-100">설정</h1>
+      <Bilingual
+        as="h1"
+        className="text-xl font-semibold text-gray-900 dark:text-neutral-100"
+        jp="設定"
+        kr="설정"
+      />
 
       <form
         onSubmit={handleSubmit}
@@ -59,7 +65,7 @@ export default function AdminSettingsPage() {
             htmlFor="current-password"
             className="text-sm font-medium text-gray-700 dark:text-neutral-300"
           >
-            현재 비밀번호
+            <BilingualInline jp="現在のパスワード" kr="현재 비밀번호" />
           </label>
           <input
             id="current-password"
@@ -77,7 +83,7 @@ export default function AdminSettingsPage() {
             htmlFor="new-password"
             className="text-sm font-medium text-gray-700 dark:text-neutral-300"
           >
-            새 비밀번호
+            <BilingualInline jp="新しいパスワード" kr="새 비밀번호" />
           </label>
           <input
             id="new-password"
@@ -95,7 +101,7 @@ export default function AdminSettingsPage() {
             htmlFor="confirm-password"
             className="text-sm font-medium text-gray-700 dark:text-neutral-300"
           >
-            새 비밀번호 확인
+            <BilingualInline jp="新しいパスワード（確認）" kr="새 비밀번호 확인" />
           </label>
           <input
             id="confirm-password"
@@ -124,7 +130,11 @@ export default function AdminSettingsPage() {
           disabled={isSubmitting}
           className="mt-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
         >
-          {isSubmitting ? "변경 중..." : "비밀번호 변경"}
+          {isSubmitting ? (
+            <BilingualInline jp="変更中..." kr="변경 중..." />
+          ) : (
+            <BilingualInline jp="変更する" kr="비밀번호 변경" />
+          )}
         </button>
       </form>
     </div>

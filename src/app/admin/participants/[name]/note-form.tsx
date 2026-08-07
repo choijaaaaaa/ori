@@ -3,6 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { BilingualInline } from "@/components/bilingual";
 
 export default function NoteForm({ participantName }: { participantName: string }) {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function NoteForm({ participantName }: { participantName: string 
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="note" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-          메모
+          <BilingualInline jp="メモ内容" kr="메모 내용" />
         </label>
         <textarea
           id="note"
@@ -63,7 +64,7 @@ export default function NoteForm({ participantName }: { participantName: string 
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="tags" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-          태그 (쉼표로 구분, 선택)
+          <BilingualInline jp="タグ（カンマ区切り、任意）" kr="태그 (쉼표로 구분, 선택)" />
         </label>
         <input
           id="tags"
@@ -88,10 +89,14 @@ export default function NoteForm({ participantName }: { participantName: string 
       <button
         type="submit"
         disabled={status === "submitting"}
-        aria-label="메모 저장하기"
+        aria-label="メモを保存する / 메모 저장하기"
         className="inline-flex w-fit items-center justify-center rounded-full bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {status === "submitting" ? "저장 중..." : "메모 저장"}
+        {status === "submitting" ? (
+          <BilingualInline jp="保存中..." kr="저장 중..." />
+        ) : (
+          <BilingualInline jp="保存する" kr="메모 저장" />
+        )}
       </button>
     </form>
   );

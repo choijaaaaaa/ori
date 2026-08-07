@@ -1,6 +1,7 @@
-// 공개 홈 화면 — 서비스 소개, 공지사항, 사진 갤러리
+// 공개 홈 화면 — 서비스 소개, 오시는 길, 공지사항, 사진 갤러리
 import Link from "next/link";
 import { repository } from "@/lib/repository";
+import { Bilingual, BilingualInline } from "@/components/bilingual";
 import type { Announcement, Photo } from "@/lib/types";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(mock 단계 fs 읽기 특성상 필수).
@@ -29,18 +30,32 @@ export default async function Home() {
     <div className="flex flex-1 flex-col bg-amber-50 dark:bg-zinc-950">
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-16 px-6 py-16 sm:px-10">
         <section className="flex flex-col items-center gap-4 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
-            한일교류회
-          </h1>
-          <p className="max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-            한국과 일본을 잇는 따뜻한 만남, 한일교류회에서 함께해요.
-          </p>
+          <Bilingual
+            as="h1"
+            jp={
+              <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+                日韓交流会
+              </span>
+            }
+            kr="일한교류회"
+            krClassName="mt-1 text-sm text-zinc-500 dark:text-zinc-400 font-normal"
+          />
+          <Bilingual
+            as="p"
+            className="max-w-xl"
+            jp={
+              <span className="text-base leading-7 text-zinc-600 dark:text-zinc-300">
+                日本語と韓国語、二つの言語と文化をつなぐ温かい出会いの場です。
+              </span>
+            }
+            kr="한국어와 일본어, 두 언어와 문화를 잇는 따뜻한 만남의 자리입니다."
+          />
           <Link
             href="/survey"
             className="mt-2 inline-flex items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
-            aria-label="설문에 참여하기"
+            aria-label="アンケートに参加する / 설문에 참여하기"
           >
-            설문 참여하기
+            <BilingualInline jp="アンケートに参加する" kr="설문 참여하기" />
           </Link>
         </section>
 
@@ -49,22 +64,79 @@ export default async function Home() {
             role="alert"
             className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
           >
-            데이터를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.
+            <BilingualInline
+              jp="データの読み込み中に問題が発生しました。しばらくしてから再度お試しください。"
+              kr="데이터를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+            />
           </p>
         )}
+
+        <section aria-labelledby="about-heading" className="flex flex-col gap-4">
+          <Bilingual
+            as="h2"
+            jp={<span id="about-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">団体紹介</span>}
+            kr="소개"
+          />
+          <Bilingual
+            as="div"
+            className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            jp={
+              <p className="text-sm leading-7 text-zinc-600 dark:text-zinc-300">
+                日韓交流会は、大阪梅田を拠点に活動する言語交流コミュニティです。日本語を学びたい方、韓国語を学びたい方が気軽に集まり、言語交換やゲーム、フリートークを通じて交流しています。初めての方も日本語だけで参加いただけます。
+              </p>
+            }
+            kr={
+              <p className="mt-2 text-sm leading-7">
+                일한교류회는 오사카 우메다를 거점으로 활동하는 언어 교류 커뮤니티입니다. 일본어를 배우고 싶은 분, 한국어를 배우고 싶은 분이 편하게 모여 언어교환·게임·프리토크를 통해 교류합니다. 처음 오시는 분도 부담 없이 참여하실 수 있어요.
+              </p>
+            }
+          />
+        </section>
+
+        <section aria-labelledby="access-heading" className="flex flex-col gap-4">
+          <Bilingual
+            as="h2"
+            jp={<span id="access-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">アクセス</span>}
+            kr="오시는 길"
+          />
+          <div className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm">
+              <dt className="font-semibold text-zinc-900 dark:text-zinc-50">
+                <BilingualInline jp="会場エリア" kr="장소" />
+              </dt>
+              <dd className="text-zinc-600 dark:text-zinc-300">大阪府大阪市 梅田周辺（詳細は参加者に個別案内）</dd>
+
+              <dt className="font-semibold text-zinc-900 dark:text-zinc-50">
+                <BilingualInline jp="最寄駅" kr="최인접역" />
+              </dt>
+              <dd className="text-zinc-600 dark:text-zinc-300">
+                JR大阪駅 / 阪急梅田駅 / 阪神梅田駅 / 大阪メトロ梅田駅（各駅から徒歩5〜10分）
+              </dd>
+
+              <dt className="font-semibold text-zinc-900 dark:text-zinc-50">
+                <BilingualInline jp="ご案内" kr="안내" />
+              </dt>
+              <dd className="text-zinc-600 dark:text-zinc-300">
+                会場の詳しい住所・地図は、アンケートにご回答いただいた方に個別にご案内します。
+              </dd>
+            </dl>
+            <p className="mt-4 border-t border-amber-100 pt-3 text-xs text-zinc-400 dark:border-zinc-800">
+              오사카 우메다 인근에서 진행되며, 정확한 장소는 설문 응답자에게 개별 안내드립니다. (JR 오사카역 / 한큐 우메다역 / 한신 우메다역 / 오사카메트로 우메다역에서 도보 5~10분)
+            </p>
+          </div>
+        </section>
 
         {data.ok && (
           <>
             <section aria-labelledby="announcements-heading" className="flex flex-col gap-4">
-              <h2
-                id="announcements-heading"
-                className="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
-              >
-                공지사항
-              </h2>
+              <Bilingual
+                as="h2"
+                jp={<span id="announcements-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">お知らせ</span>}
+                kr="공지사항"
+              />
               {data.announcements.length === 0 ? (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  등록된 공지가 없습니다.
+                  <BilingualInline jp="お知らせはまだありません。" kr="등록된 공지가 없습니다." />
                 </p>
               ) : (
                 <ul className="flex flex-col gap-3">
@@ -83,7 +155,7 @@ export default async function Home() {
                         dateTime={item.createdAt}
                         className="mt-2 block text-xs text-zinc-400"
                       >
-                        {new Date(item.createdAt).toLocaleDateString("ko-KR")}
+                        {new Date(item.createdAt).toLocaleDateString("ja-JP")}
                       </time>
                     </li>
                   ))}
@@ -92,15 +164,14 @@ export default async function Home() {
             </section>
 
             <section aria-labelledby="gallery-heading" className="flex flex-col gap-4">
-              <h2
-                id="gallery-heading"
-                className="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
-              >
-                사진 갤러리
-              </h2>
+              <Bilingual
+                as="h2"
+                jp={<span id="gallery-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">フォトギャラリー</span>}
+                kr="사진 갤러리"
+              />
               {data.photos.length === 0 ? (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  등록된 사진이 없습니다.
+                  <BilingualInline jp="写真はまだありません。" kr="등록된 사진이 없습니다." />
                 </p>
               ) : (
                 <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -108,7 +179,7 @@ export default async function Home() {
                     <li key={photo.id} className="flex flex-col gap-1">
                       <img
                         src={photo.url}
-                        alt={photo.caption ?? "한일교류회 활동 사진"}
+                        alt={photo.caption ?? "日韓交流会の活動写真 / 일한교류회 활동 사진"}
                         className="aspect-square w-full rounded-lg object-cover"
                       />
                       {photo.caption && (
@@ -129,9 +200,9 @@ export default async function Home() {
         <Link
           href="/admin/login"
           className="text-[11px] text-zinc-300 hover:text-zinc-400 dark:text-zinc-700 dark:hover:text-zinc-600"
-          aria-label="관리자 페이지로 이동"
+          aria-label="管理者ページへ / 관리자 페이지로 이동"
         >
-          관리자
+          管理者 / 관리자
         </Link>
       </footer>
     </div>

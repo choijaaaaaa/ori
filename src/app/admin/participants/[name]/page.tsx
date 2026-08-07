@@ -2,6 +2,7 @@
 import { repository } from "@/lib/repository";
 import type { ParticipantNote, SurveyResponse } from "@/lib/types";
 import NoteForm from "./note-form";
+import { Bilingual, BilingualInline } from "@/components/bilingual";
 
 async function loadParticipant(
   name: string
@@ -33,25 +34,39 @@ export default async function ParticipantDetailPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{name}</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{name}</h1>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          参加者詳細 <span className="text-xs opacity-70">(참가자 상세)</span>
+        </span>
+      </div>
 
       {!data.ok && (
         <p
           role="alert"
           className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
         >
-          참가자 정보를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.
+          参加者情報の読み込み中に問題が発生しました。しばらくしてから再度お試しください。
+          <span className="block text-xs opacity-80">
+            참가자 정보를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.
+          </span>
         </p>
       )}
 
       {data.ok && (
         <>
           <section aria-labelledby="responses-heading" className="flex flex-col gap-3">
-            <h2 id="responses-heading" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              설문 이력
-            </h2>
+            <Bilingual
+              as="h2"
+              className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+              jp={<span id="responses-heading">アンケート履歴</span>}
+              kr="설문 이력"
+            />
             {data.responses.length === 0 ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">설문 응답 이력이 없습니다.</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                アンケート回答履歴がありません。
+                <span className="block text-xs opacity-80">설문 응답 이력이 없습니다.</span>
+              </p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {data.responses.map((r) => (
@@ -61,7 +76,9 @@ export default async function ParticipantDetailPage({
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       {r.contact && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">연락처: {r.contact}</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          <BilingualInline jp="連絡先" kr="연락처" />: {r.contact}
+                        </p>
                       )}
                       <time dateTime={r.submittedAt} className="text-xs text-zinc-400">
                         {new Date(r.submittedAt).toLocaleString("ko-KR")}
@@ -82,11 +99,17 @@ export default async function ParticipantDetailPage({
           </section>
 
           <section aria-labelledby="notes-heading" className="flex flex-col gap-4">
-            <h2 id="notes-heading" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              운영자 메모
-            </h2>
+            <Bilingual
+              as="h2"
+              className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+              jp={<span id="notes-heading">メモ</span>}
+              kr="운영자 메모"
+            />
             {data.notes.length === 0 ? (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">등록된 메모가 없습니다.</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                登録されたメモはありません。
+                <span className="block text-xs opacity-80">등록된 메모가 없습니다.</span>
+              </p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {data.notes.map((n) => (

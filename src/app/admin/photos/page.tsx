@@ -2,6 +2,7 @@
 import { repository } from "@/lib/repository";
 import type { Photo } from "@/lib/types";
 import PhotoForm from "./photo-form";
+import { Bilingual } from "@/components/bilingual";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(mock 단계 fs 읽기 특성상 필수).
 export const dynamic = "force-dynamic";
@@ -21,29 +22,38 @@ export default async function AdminPhotosPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">사진 갤러리 관리</h1>
+      <Bilingual
+        as="h1"
+        className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
+        jp="写真管理"
+        kr="사진 갤러리 관리"
+      />
 
       <PhotoForm />
 
       <section aria-labelledby="photo-list-heading" className="flex flex-col gap-3">
-        <h2
-          id="photo-list-heading"
+        <Bilingual
+          as="h2"
           className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-        >
-          등록된 사진
-        </h2>
+          jp={<span id="photo-list-heading">登録済みの写真</span>}
+          kr="등록된 사진"
+        />
 
         {!data.ok && (
           <p
             role="alert"
             className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
           >
-            사진 목록을 불러오는 중 문제가 발생했습니다.
+            写真の読み込み中に問題が発生しました。
+            <span className="block text-xs opacity-80">사진 목록을 불러오는 중 문제가 발생했습니다.</span>
           </p>
         )}
 
         {data.ok && data.items.length === 0 && (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">등록된 사진이 없습니다.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            登録された写真はありません。
+            <span className="block text-xs opacity-80">등록된 사진이 없습니다.</span>
+          </p>
         )}
 
         {data.ok && data.items.length > 0 && (

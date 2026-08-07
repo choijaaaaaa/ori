@@ -3,6 +3,7 @@
 // 공지사항 작성 폼 — 제출 성공 시 router.refresh()로 목록 갱신
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { BilingualInline } from "@/components/bilingual";
 
 export default function AnnouncementForm() {
   const router = useRouter();
@@ -43,11 +44,11 @@ export default function AnnouncementForm() {
     <form
       onSubmit={handleSubmit}
       className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
-      aria-label="새 공지 작성 폼"
+      aria-label="お知らせ作成フォーム / 새 공지 작성 폼"
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="announcement-title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          제목
+          <BilingualInline jp="タイトル" kr="제목" />
         </label>
         <input
           id="announcement-title"
@@ -60,7 +61,7 @@ export default function AnnouncementForm() {
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="announcement-content" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          내용
+          <BilingualInline jp="本文" kr="내용" />
         </label>
         <textarea
           id="announcement-content"
@@ -81,10 +82,14 @@ export default function AnnouncementForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        aria-label="공지 등록"
+        aria-label="お知らせ投稿 / 공지 등록"
         className="mt-1 inline-flex items-center justify-center rounded-full bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
       >
-        {isSubmitting ? "등록 중..." : "공지 등록"}
+        {isSubmitting ? (
+          <BilingualInline jp="投稿中..." kr="등록 중..." />
+        ) : (
+          <BilingualInline jp="投稿する" kr="공지 등록" />
+        )}
       </button>
     </form>
   );
