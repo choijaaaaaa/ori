@@ -19,6 +19,11 @@
   }
 }
 
+/* 참가자 중 어르신 비중이 높아 Tailwind rem 단위 글자 크기가 전체적으로 커지도록 루트 폰트 크기를 올린다. */
+html {
+  font-size: 120%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
