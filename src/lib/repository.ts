@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { readDataFile, writeDataFile } from "./data-dir";
 import type {
-  Announcement,
+  EventPost,
   Photo,
   SurveyResponse,
   ParticipantNote,
@@ -10,8 +10,15 @@ import type {
 
 // Supabase로 교체 시 이 인터페이스를 그대로 구현한 리포지토리로 바꿔치기하면 된다.
 export interface DataRepository {
-  listAnnouncements(): Promise<Announcement[]>;
-  createAnnouncement(input: { title: string; content: string }): Promise<Announcement>;
+  listEvents(): Promise<EventPost[]>;
+  getEvent(id: string): Promise<EventPost | null>;
+  createEvent(input: {
+    title: string;
+    content: string;
+    eventDate?: string;
+    coverPhotoUrl?: string;
+    venueInfo?: string;
+  }): Promise<EventPost>;
 
   listPhotos(): Promise<Photo[]>;
   addPhoto(input: { url: string; caption?: string }): Promise<Photo>;
@@ -42,21 +49,37 @@ async function writeJson<T>(file: string, data: T): Promise<void> {
 // mock 단계 구현체. 서버리스(Vercel) 배포에서는 파일시스템이 재배포마다 초기화되므로
 // 작성 데이터가 영구 저장되지 않는다 — Supabase 연동 전까지의 임시 구현.
 class JsonFileRepository implements DataRepository {
-  async listAnnouncements(): Promise<Announcement[]> {
-    const items = await readJson<Announcement[]>("announcements.json");
-    return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  async listEvents(): Promise<EventPost[]> {
+    const items = await readJson<EventPost[]>("events.json");
+    return items.sort((a, b) =>
+      (b.eventDate ?? b.createdAt).localeCompare(a.eventDate ?? a.createdAt)
+    );
   }
 
-  async createAnnouncement(input: { title: string; content: string }): Promise<Announcement> {
-    const items = await readJson<Announcement[]>("announcements.json");
-    const created: Announcement = {
+  async getEvent(id: string): Promise<EventPost | null> {
+    const items = await readJson<EventPost[]>("events.json");
+    return items.find((e) => e.id === id) ?? null;
+  }
+
+  async createEvent(input: {
+    title: string;
+    content: string;
+    eventDate?: string;
+    coverPhotoUrl?: string;
+    venueInfo?: string;
+  }): Promise<EventPost> {
+    const items = await readJson<EventPost[]>("events.json");
+    const created: EventPost = {
       id: randomUUID(),
       title: input.title,
       content: input.content,
+      eventDate: input.eventDate,
+      coverPhotoUrl: input.coverPhotoUrl,
+      venueInfo: input.venueInfo,
       createdAt: new Date().toISOString(),
     };
     items.push(created);
-    await writeJson("announcements.json", items);
+    await writeJson("events.json", items);
     return created;
   }
 

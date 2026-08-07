@@ -21,7 +21,7 @@ async function loadOverview(): Promise<
 }
 
 const SHORTCUTS = [
-  { href: "/admin/announcements", jp: "お知らせ管理", kr: "공지관리" },
+  { href: "/admin/events", jp: "イベント管理", kr: "이벤트관리" },
   { href: "/admin/photos", jp: "写真管理", kr: "사진관리" },
   { href: "/admin/surveys", jp: "アンケート一覧", kr: "설문목록" },
 ];

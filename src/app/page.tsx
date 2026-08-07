@@ -1,23 +1,23 @@
-// 공개 홈 화면 — 서비스 소개, 오시는 길, 공지사항, 사진 갤러리
+// 공개 홈 화면 — 서비스 소개, 오시는 길, 이벤트(회차) 카드, 사진 갤러리
 import Link from "next/link";
 import { repository } from "@/lib/repository";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
-import type { Announcement, Photo } from "@/lib/types";
+import type { EventPost, Photo } from "@/lib/types";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(mock 단계 fs 읽기 특성상 필수).
 export const dynamic = "force-dynamic";
 
 async function loadHomeData(): Promise<
-  | { ok: true; announcements: Announcement[]; photos: Photo[] }
+  | { ok: true; events: EventPost[]; photos: Photo[] }
   | { ok: false }
 > {
   try {
-    const [announcements, photos] = await Promise.all([
-      repository.listAnnouncements(),
+    const [events, photos] = await Promise.all([
+      repository.listEvents(),
       repository.listPhotos(),
     ]);
-    return { ok: true, announcements, photos };
+    return { ok: true, events, photos };
   } catch (error) {
     console.error("홈 데이터 로드 실패", error);
     return { ok: false };
@@ -130,35 +130,49 @@ export default async function Home() {
 
         {data.ok && (
           <>
-            <section aria-labelledby="announcements-heading" className="flex flex-col gap-4">
+            <section aria-labelledby="events-heading" className="flex flex-col gap-4">
               <Bilingual
                 as="h2"
-                jp={<span id="announcements-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">お知らせ</span>}
-                kr="공지사항"
+                jp={<span id="events-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">イベント一覧</span>}
+                kr="모임 일정"
               />
-              {data.announcements.length === 0 ? (
+              {data.events.length === 0 ? (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  <BilingualInline jp="お知らせはまだありません。" kr="등록된 공지가 없습니다." />
+                  <BilingualInline jp="予定されているイベントはまだありません。" kr="예정된 모임이 아직 없습니다." />
                 </p>
               ) : (
-                <ul className="flex flex-col gap-3">
-                  {data.announcements.map((item) => (
-                    <li
-                      key={item.id}
-                      className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-                    >
-                      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-                        {item.title}
-                      </h3>
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">
-                        {item.content}
-                      </p>
-                      <time
-                        dateTime={item.createdAt}
-                        className="mt-2 block text-xs text-zinc-400"
+                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {data.events.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/events/${item.id}`}
+                        className="flex flex-col overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
                       >
-                        {new Date(item.createdAt).toLocaleDateString("ja-JP")}
-                      </time>
+                        {item.coverPhotoUrl ? (
+                          <img
+                            src={item.coverPhotoUrl}
+                            alt={item.title}
+                            className="aspect-video w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex aspect-video w-full items-center justify-center bg-amber-100 text-3xl dark:bg-zinc-800">
+                            🦆
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-1 px-5 py-4">
+                          {item.eventDate && (
+                            <span className="w-fit rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                              {new Date(item.eventDate).toLocaleDateString("ja-JP")}
+                            </span>
+                          )}
+                          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                            {item.title}
+                          </h3>
+                          <p className="line-clamp-2 whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-300">
+                            {item.content}
+                          </p>
+                        </div>
+                      </Link>
                     </li>
                   ))}
                 </ul>

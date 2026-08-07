@@ -9,7 +9,7 @@ import { BilingualInline } from "@/components/bilingual";
 const NAV_ITEMS = [
   { href: "/admin", jp: "ダッシュボード", kr: "대시보드" },
   { href: "/admin/applications", jp: "申し込み一覧", kr: "신청 내역" },
-  { href: "/admin/announcements", jp: "お知らせ管理", kr: "공지 관리" },
+  { href: "/admin/events", jp: "イベント管理", kr: "이벤트 관리" },
   { href: "/admin/photos", jp: "写真管理", kr: "사진 관리" },
   { href: "/admin/surveys", jp: "アンケート一覧", kr: "설문 목록" },
   { href: "/admin/settings", jp: "設定", kr: "설정" },
