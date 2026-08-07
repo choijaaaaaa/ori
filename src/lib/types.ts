@@ -36,5 +36,7 @@ export interface Application {
   id: string;
   name: string;
   contact?: string;
+  message?: string;
+  eventId?: string; // 어느 회차에 신청한 것인지 (선택, 미지정이면 일반 문의로 취급)
   submittedAt: string;
 }

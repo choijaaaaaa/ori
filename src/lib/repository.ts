@@ -34,7 +34,12 @@ export interface DataRepository {
   addNote(input: { participantName: string; note: string; tags: string[] }): Promise<ParticipantNote>;
 
   listApplications(): Promise<Application[]>;
-  createApplication(input: { name: string; contact?: string }): Promise<Application>;
+  createApplication(input: {
+    name: string;
+    contact?: string;
+    message?: string;
+    eventId?: string;
+  }): Promise<Application>;
 }
 
 async function readJson<T>(file: string): Promise<T> {
@@ -150,12 +155,19 @@ class JsonFileRepository implements DataRepository {
     return items.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   }
 
-  async createApplication(input: { name: string; contact?: string }): Promise<Application> {
+  async createApplication(input: {
+    name: string;
+    contact?: string;
+    message?: string;
+    eventId?: string;
+  }): Promise<Application> {
     const items = await readJson<Application[]>("applications.json");
     const created: Application = {
       id: randomUUID(),
       name: input.name,
       contact: input.contact,
+      message: input.message,
+      eventId: input.eventId,
       submittedAt: new Date().toISOString(),
     };
     items.push(created);

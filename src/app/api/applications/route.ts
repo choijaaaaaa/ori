@@ -28,6 +28,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const contact = typeof body?.contact === "string" ? body.contact.trim() : "";
+  const message = typeof body?.message === "string" ? body.message.trim() : "";
+  const eventId = typeof body?.eventId === "string" ? body.eventId.trim() : "";
 
   if (!name) {
     return NextResponse.json(
@@ -39,6 +41,8 @@ export async function POST(request: Request) {
   const created = await repository.createApplication({
     name,
     contact: contact || undefined,
+    message: message || undefined,
+    eventId: eventId || undefined,
   });
 
   try {

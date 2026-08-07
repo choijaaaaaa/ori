@@ -70,7 +70,7 @@ export default async function EventDetailPage({
         )}
 
         <Link
-          href="/apply"
+          href={`/apply?eventId=${event.id}`}
           className="mt-4 inline-flex w-fit items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
           aria-label="参加を申し込む / 참가 신청하기"
         >

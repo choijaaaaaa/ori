@@ -1,6 +1,6 @@
 // 관리자 이벤트(교류회 회차) 관리 화면 — 목록 조회 + 새 이벤트 작성
 import { repository } from "@/lib/repository";
-import type { EventPost } from "@/lib/types";
+import type { EventPost, Photo } from "@/lib/types";
 import EventForm from "./event-form";
 import { Bilingual } from "@/components/bilingual";
 
@@ -8,11 +8,14 @@ import { Bilingual } from "@/components/bilingual";
 export const dynamic = "force-dynamic";
 
 async function loadEvents(): Promise<
-  { ok: true; items: EventPost[] } | { ok: false }
+  { ok: true; items: EventPost[]; photos: Photo[] } | { ok: false }
 > {
   try {
-    const items = await repository.listEvents();
-    return { ok: true, items };
+    const [items, photos] = await Promise.all([
+      repository.listEvents(),
+      repository.listPhotos(),
+    ]);
+    return { ok: true, items, photos };
   } catch (error) {
     console.error("이벤트 목록 로드 실패", error);
     return { ok: false };
@@ -31,7 +34,7 @@ export default async function AdminEventsPage() {
         kr="이벤트 관리"
       />
 
-      <EventForm />
+      <EventForm photos={data.ok ? data.photos : []} />
 
       <section aria-labelledby="event-list-heading" className="flex flex-col gap-3">
         <Bilingual

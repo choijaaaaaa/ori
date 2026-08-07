@@ -22,6 +22,7 @@ async function loadOverview(): Promise<
 
 const SHORTCUTS = [
   { href: "/admin/events", jp: "イベント管理", kr: "이벤트관리" },
+  { href: "/admin/applications", jp: "申し込み一覧", kr: "신청내역" },
   { href: "/admin/photos", jp: "写真管理", kr: "사진관리" },
   { href: "/admin/surveys", jp: "アンケート一覧", kr: "설문목록" },
 ];
@@ -98,7 +99,7 @@ export default async function AdminDashboardPage() {
         </>
       )}
 
-      <section aria-label="ショートカット / 바로가기" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section aria-label="ショートカット / 바로가기" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {SHORTCUTS.map((s) => (
           <Link
             key={s.href}
