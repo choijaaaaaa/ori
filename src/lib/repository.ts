@@ -1,6 +1,5 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { randomUUID } from "crypto";
+import { readDataFile, writeDataFile } from "./data-dir";
 import type {
   Announcement,
   Photo,
@@ -27,15 +26,13 @@ export interface DataRepository {
   addNote(input: { participantName: string; note: string; tags: string[] }): Promise<ParticipantNote>;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
-
 async function readJson<T>(file: string): Promise<T> {
-  const raw = await fs.readFile(path.join(DATA_DIR, file), "utf-8");
+  const raw = await readDataFile(file);
   return JSON.parse(raw) as T;
 }
 
 async function writeJson<T>(file: string, data: T): Promise<void> {
-  await fs.writeFile(path.join(DATA_DIR, file), JSON.stringify(data, null, 2), "utf-8");
+  await writeDataFile(file, JSON.stringify(data, null, 2));
 }
 
 // mock 단계 구현체. 서버리스(Vercel) 배포에서는 파일시스템이 재배포마다 초기화되므로

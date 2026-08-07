@@ -1,11 +1,10 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { randomUUID } from "crypto";
+import { readDataFile, writeDataFile } from "./data-dir";
 
-// 비밀번호는 mock 단계에서 data/admin-auth.json에 해시로 저장한다.
-// Vercel 서버리스 환경은 재배포 시 파일시스템이 초기화되므로 변경한 비밀번호가
+// 비밀번호는 mock 단계에서 admin-auth.json에 해시로 저장한다.
+// Vercel 서버리스 환경은 인스턴스가 재활용되지 않으면 초기화되므로 변경한 비밀번호가
 // 영구 저장되지 않는다 — Supabase 연동 전까지의 임시 구현.
-const AUTH_FILE = path.join(process.cwd(), "data", "admin-auth.json");
+const AUTH_FILE = "admin-auth.json";
 
 interface AdminAuth {
   passwordHash: string;
@@ -21,8 +20,8 @@ async function sha256Hex(input: string): Promise<string> {
 }
 
 async function readAuth(): Promise<AdminAuth> {
-  const raw = await fs.readFile(AUTH_FILE, "utf-8");
-  const parsed = JSON.parse(raw) as Partial<AdminAuth>;
+  const raw = await readDataFile(AUTH_FILE);
+  const parsed = (raw ? JSON.parse(raw) : {}) as Partial<AdminAuth>;
   if (parsed.passwordHash && parsed.salt) {
     return parsed as AdminAuth;
   }
@@ -34,7 +33,7 @@ async function readAuth(): Promise<AdminAuth> {
   const salt = randomUUID();
   const passwordHash = await sha256Hex(`${salt}:${initialPassword}`);
   const auth: AdminAuth = { passwordHash, salt };
-  await fs.writeFile(AUTH_FILE, JSON.stringify(auth, null, 2), "utf-8");
+  await writeDataFile(AUTH_FILE, JSON.stringify(auth, null, 2));
   return auth;
 }
 
@@ -55,10 +54,6 @@ export async function changeAdminPassword(
   }
   const salt = randomUUID();
   const passwordHash = await sha256Hex(`${salt}:${newPassword}`);
-  await fs.writeFile(
-    AUTH_FILE,
-    JSON.stringify({ passwordHash, salt }, null, 2),
-    "utf-8"
-  );
+  await writeDataFile(AUTH_FILE, JSON.stringify({ passwordHash, salt }, null, 2));
   return true;
 }
