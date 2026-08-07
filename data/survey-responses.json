@@ -1,0 +1,26 @@
+[
+  {
+    "id": "s1",
+    "participantName": "다나카 유이",
+    "contact": "yui.tanaka@example.com",
+    "answers": {
+      "일본어_수준": "상급",
+      "한국어_수준": "중급",
+      "참가_목적": "언어교환",
+      "하고싶은말": "다음 모임도 참석하고 싶어요!"
+    },
+    "submittedAt": "2026-07-15T03:20:00.000Z"
+  },
+  {
+    "id": "s2",
+    "participantName": "김민준",
+    "contact": "minjun.kim@example.com",
+    "answers": {
+      "일본어_수준": "초급",
+      "한국어_수준": "원어민",
+      "참가_목적": "친구만들기",
+      "하고싶은말": "재밌었습니다"
+    },
+    "submittedAt": "2026-07-16T05:10:00.000Z"
+  }
+]
