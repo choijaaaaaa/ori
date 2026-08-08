@@ -4,7 +4,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BilingualInline } from "@/components/bilingual";
-import { fileToResizedDataUrl } from "@/lib/image-utils";
+import { resizeImageFile, uploadImage } from "@/lib/image-utils";
 import type { Photo } from "@/lib/types";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
@@ -14,11 +14,19 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [eventDate, setEventDate] = useState("");
-  const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState(""); // 갤러리에서 고른 기존 사진 URL
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState(""); // 새로 업로드할 이미지 미리보기
+  const [coverImageBlob, setCoverImageBlob] = useState<Blob | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [venueInfo, setVenueInfo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function selectGalleryPhoto(url: string) {
+    setCoverImageBlob(null);
+    setCoverPreviewUrl("");
+    setCoverPhotoUrl(coverPhotoUrl === url ? "" : url);
+  }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -33,8 +41,10 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
     setError(null);
     setIsProcessingImage(true);
     try {
-      const dataUrl = await fileToResizedDataUrl(file);
-      setCoverPhotoUrl(dataUrl);
+      const { blob, previewUrl } = await resizeImageFile(file);
+      setCoverPhotoUrl("");
+      setCoverImageBlob(blob);
+      setCoverPreviewUrl(previewUrl);
     } catch {
       setError("이미지를 처리하는 중 오류가 발생했습니다.");
     } finally {
@@ -48,6 +58,8 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
     setIsSubmitting(true);
 
     try {
+      const finalCoverUrl = coverImageBlob ? await uploadImage(coverImageBlob) : coverPhotoUrl;
+
       const res = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,7 +67,7 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
           title,
           content,
           eventDate: eventDate || undefined,
-          coverPhotoUrl: coverPhotoUrl || undefined,
+          coverPhotoUrl: finalCoverUrl || undefined,
           venueInfo: venueInfo || undefined,
         }),
       });
@@ -70,10 +82,12 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
       setContent("");
       setEventDate("");
       setCoverPhotoUrl("");
+      setCoverPreviewUrl("");
+      setCoverImageBlob(null);
       setVenueInfo("");
       router.refresh();
-    } catch {
-      setError("네트워크 오류로 이벤트 등록에 실패했습니다.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "네트워크 오류로 이벤트 등록에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -126,9 +140,7 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
               <button
                 key={photo.id}
                 type="button"
-                onClick={() =>
-                  setCoverPhotoUrl(coverPhotoUrl === photo.url ? "" : photo.url)
-                }
+                onClick={() => selectGalleryPhoto(photo.url)}
                 aria-pressed={coverPhotoUrl === photo.url}
                 aria-label={photo.caption ?? photo.url}
                 className={`overflow-hidden rounded-lg border-2 transition-colors ${
@@ -166,8 +178,12 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
             <BilingualInline jp="画像を処理中..." kr="이미지 처리 중..." />
           </p>
         )}
-        {coverPhotoUrl && !isProcessingImage && (
-          <img src={coverPhotoUrl} alt="プレビュー / 미리보기" className="h-20 w-20 rounded-lg object-cover" />
+        {(coverPreviewUrl || coverPhotoUrl) && !isProcessingImage && (
+          <img
+            src={coverPreviewUrl || coverPhotoUrl}
+            alt="プレビュー / 미리보기"
+            className="h-20 w-20 rounded-lg object-cover"
+          />
         )}
       </div>
 

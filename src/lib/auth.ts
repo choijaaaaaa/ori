@@ -1,11 +1,7 @@
 import { randomUUID } from "crypto";
-import { readDataFile, writeDataFile } from "./data-dir";
+import { supabase } from "./supabase";
 
-// 비밀번호는 mock 단계에서 admin-auth.json에 해시로 저장한다.
-// Vercel 서버리스 환경은 인스턴스가 재활용되지 않으면 초기화되므로 변경한 비밀번호가
-// 영구 저장되지 않는다 — Supabase 연동 전까지의 임시 구현.
-const AUTH_FILE = "admin-auth.json";
-
+// 관리자 비밀번호 해시는 admin_auth 테이블(단일 행, id=1)에 저장한다.
 interface AdminAuth {
   passwordHash: string;
   salt: string;
@@ -20,10 +16,15 @@ async function sha256Hex(input: string): Promise<string> {
 }
 
 async function readAuth(): Promise<AdminAuth> {
-  const raw = await readDataFile(AUTH_FILE);
-  const parsed = (raw ? JSON.parse(raw) : {}) as Partial<AdminAuth>;
-  if (parsed.passwordHash && parsed.salt) {
-    return parsed as AdminAuth;
+  const { data, error } = await supabase
+    .from("admin_auth")
+    .select("password_hash, salt")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  if (data) {
+    return { passwordHash: data.password_hash, salt: data.salt };
   }
 
   const initialPassword = process.env.ADMIN_PASSWORD;
@@ -32,9 +33,11 @@ async function readAuth(): Promise<AdminAuth> {
   }
   const salt = randomUUID();
   const passwordHash = await sha256Hex(`${salt}:${initialPassword}`);
-  const auth: AdminAuth = { passwordHash, salt };
-  await writeDataFile(AUTH_FILE, JSON.stringify(auth, null, 2));
-  return auth;
+  const { error: insertError } = await supabase
+    .from("admin_auth")
+    .insert({ id: 1, password_hash: passwordHash, salt });
+  if (insertError) throw new Error(insertError.message);
+  return { passwordHash, salt };
 }
 
 export async function verifyAdminPassword(password: string): Promise<boolean> {
@@ -54,6 +57,10 @@ export async function changeAdminPassword(
   }
   const salt = randomUUID();
   const passwordHash = await sha256Hex(`${salt}:${newPassword}`);
-  await writeDataFile(AUTH_FILE, JSON.stringify({ passwordHash, salt }, null, 2));
+  const { error } = await supabase
+    .from("admin_auth")
+    .update({ password_hash: passwordHash, salt })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
   return true;
 }

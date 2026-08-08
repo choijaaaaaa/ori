@@ -1,15 +1,10 @@
 # ori
 
-일한교류회(日韓交流会) 운영을 위한 웹앱. 공지/사진 갤러리 공개, 참가 신청(QR로 설문 연결), 설문 접수, 관리자 전용 참가자 CRM(설문 이력 + 메모)을 제공한다.
+일한교류회(日韓交流会) 운영을 위한 웹앱. 이벤트(교류회 회차) 카드 공개, 참가 신청(QR로 설문 연결), 설문 접수, 관리자 전용 참가자 CRM(설문 이력 + 메모)을 제공한다.
 
-## 현재 단계: mock
+## 데이터 저장
 
-데이터는 `data/*.json` 파일로 저장된다. `src/lib/repository.ts`의 `DataRepository` 인터페이스만 유지한 채 나중에 Supabase 구현체로 교체할 예정이다.
-
-Vercel에서는 프로젝트 디렉토리가 읽기 전용이라 `/tmp`(서버리스 인스턴스별로 격리·휘발되는 임시 공간)에 데이터를 쓴다(`src/lib/data-dir.ts`). 그 결과:
-- 관리자가 작성한 데이터(공지, 사진, 설문 응답, 메모, 변경한 비밀번호)는 재배포하면 초기화된다.
-- **같은 배포 안에서도** 요청이 다른 서버리스 인스턴스로 라우팅되면 방금 쓴 데이터가 안 보일 수 있다 — 인스턴스마다 `/tmp`가 따로 존재하기 때문. 방문자가 몰리는 실제 운영에는 부적합하고, 화면 흐름 검증용 데모로만 신뢰할 것.
-- 실제 운영 가능한 수준으로 쓰려면 Supabase(또는 다른 실제 DB) 연동이 필수다.
+Supabase(Postgres + Storage)를 사용한다. `src/lib/repository.ts`의 `DataRepository` 인터페이스를 `src/lib/supabase-repository.ts`(`SupabaseRepository`)가 구현하며, 관리자 비밀번호는 `admin_auth` 테이블, 사진/이벤트 대표사진은 `photos` Storage 버킷(공개)에 업로드된다. 스키마는 `supabase/schema.sql`에 있다.
 
 ## 로컬 실행
 
@@ -23,9 +18,11 @@ npm run dev
 
 | 이름 | 설명 |
 |---|---|
-| `ADMIN_PASSWORD` | 최초 관리자 비밀번호. `data/admin-auth.json`이 비어있을 때만 초기화에 사용되고, 이후엔 관리자 설정 화면에서 변경한 해시값이 우선한다. |
+| `ADMIN_PASSWORD` | 최초 관리자 비밀번호. `admin_auth` 테이블이 비어있을 때만 초기화에 사용되고, 이후엔 관리자 설정 화면에서 변경한 해시값이 우선한다. |
 | `ADMIN_SESSION_SECRET` | 관리자 세션 쿠키 서명용 비밀키. 운영 배포 전 반드시 임의의 긴 문자열로 교체. |
 | `ADMIN_NOTIFY_EMAIL` | 참가 신청·설문 제출 시 알림을 받을 이메일. 지금은 실제 발송 없이 로그만 남기는 스텁(`src/lib/notify.ts`)이고, 추후 실제 이메일 서비스 연동 지점. |
+| `SUPABASE_URL` | Supabase 프로젝트 URL. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role 키. 서버(Route Handler/서버 컴포넌트)에서만 쓰고 클라이언트로 절대 넘기지 않는다. |
 
 ## 참가 흐름
 
@@ -33,13 +30,15 @@ npm run dev
 
 ## 구조
 
-- `/` — 소개, 오시는 길, 공지사항, 사진 갤러리 (공개)
+- `/` — 소개, 오시는 길, 이벤트 카드, 사진 갤러리 (공개)
 - `/apply` — 참가 신청 폼, 제출 후 설문 페이지로 연결되는 QR 코드 표시 (공개)
 - `/survey` — 참가자 설문 폼, 신청 후 QR로만 안내 (공개)
+- `/events/[id]` — 이벤트 상세(내용 + 오시는 길) (공개)
 - `/admin/login` — 관리자 로그인 (비밀번호 단일 인증)
 - `/admin` — 대시보드
-- `/admin/applications` — 참가 신청 내역
-- `/admin/announcements`, `/admin/photos` — 공지/사진 관리
+- `/admin/applications` — 참가 신청 내역(이벤트별 그룹)
+- `/admin/events` — 이벤트 관리 (대표사진은 갤러리 선택 또는 로컬 업로드)
+- `/admin/photos` — 사진 갤러리 관리 (로컬 업로드)
 - `/admin/surveys` — 설문 응답 목록
 - `/admin/participants/[name]` — 참가자별 설문 이력 + 메모(CRM)
 - `/admin/settings` — 관리자 비밀번호 변경
@@ -48,12 +47,14 @@ npm run dev
 
 1. GitHub `ori` 저장소에 push
 2. Vercel에서 해당 저장소 Import
-3. 환경변수(`ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `ADMIN_NOTIFY_EMAIL`)를 Vercel 프로젝트 설정에 등록
+3. 환경변수(`ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `ADMIN_NOTIFY_EMAIL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)를 Vercel 프로젝트 설정에 등록
 4. Deploy
 
-## 다음 단계 (Supabase 연동 시)
+## Supabase 스키마 적용
 
-- `src/lib/repository.ts`의 `JsonFileRepository`를 대체하는 `SupabaseRepository` 구현체 추가 (동일한 `DataRepository` 인터페이스 구현)
-- 관리자 비밀번호/세션을 Supabase Auth로 교체
-- 사진 업로드를 URL 입력 방식에서 Supabase Storage 실제 업로드로 교체
+`supabase/schema.sql`을 Supabase 프로젝트의 SQL Editor(또는 Management API)에서 실행하면 테이블이 만들어진다. `photos`라는 이름의 공개 Storage 버킷도 별도로 만들어야 한다(대시보드 Storage 탭 또는 API로 생성, `public: true`).
+
+## 다음 단계
+
 - `src/lib/notify.ts`를 실제 이메일 서비스(Resend 등) 연동으로 교체
+- 필요 시 관리자 인증을 Supabase Auth로 전환(지금은 단일 비밀번호 해시 방식)

@@ -4,13 +4,14 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BilingualInline } from "@/components/bilingual";
-import { fileToResizedDataUrl } from "@/lib/image-utils";
+import { resizeImageFile, uploadImage } from "@/lib/image-utils";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 
 export default function PhotoForm() {
   const router = useRouter();
   const [previewUrl, setPreviewUrl] = useState("");
+  const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [caption, setCaption] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,8 +30,9 @@ export default function PhotoForm() {
     setError(null);
     setIsProcessing(true);
     try {
-      const dataUrl = await fileToResizedDataUrl(file);
-      setPreviewUrl(dataUrl);
+      const { blob, previewUrl: preview } = await resizeImageFile(file);
+      setImageBlob(blob);
+      setPreviewUrl(preview);
     } catch {
       setError("이미지를 처리하는 중 오류가 발생했습니다.");
     } finally {
@@ -42,17 +44,18 @@ export default function PhotoForm() {
     event.preventDefault();
     setError(null);
 
-    if (!previewUrl) {
+    if (!imageBlob) {
       setError("사진을 선택해주세요.");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const url = await uploadImage(imageBlob);
       const res = await fetch("/api/photos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: previewUrl, caption: caption || undefined }),
+        body: JSON.stringify({ url, caption: caption || undefined }),
       });
 
       if (!res.ok) {
@@ -62,10 +65,11 @@ export default function PhotoForm() {
       }
 
       setPreviewUrl("");
+      setImageBlob(null);
       setCaption("");
       router.refresh();
-    } catch {
-      setError("네트워크 오류로 사진 등록에 실패했습니다.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "네트워크 오류로 사진 등록에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
