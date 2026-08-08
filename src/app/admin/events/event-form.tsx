@@ -1,10 +1,13 @@
 "use client";
 
 // 이벤트(교류회 회차) 작성 폼 — 제출 성공 시 router.refresh()로 목록 갱신
-import { useState, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BilingualInline } from "@/components/bilingual";
+import { fileToResizedDataUrl } from "@/lib/image-utils";
 import type { Photo } from "@/lib/types";
+
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 
 export default function EventForm({ photos }: { photos: Photo[] }) {
   const router = useRouter();
@@ -12,9 +15,32 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
   const [content, setContent] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [venueInfo, setVenueInfo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError("파일 용량이 너무 큽니다 (최대 15MB).");
+      event.target.value = "";
+      return;
+    }
+
+    setError(null);
+    setIsProcessingImage(true);
+    try {
+      const dataUrl = await fileToResizedDataUrl(file);
+      setCoverPhotoUrl(dataUrl);
+    } catch {
+      setError("이미지를 처리하는 중 오류가 발생했습니다.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -123,14 +149,26 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
             />
           </p>
         )}
-        <input
-          id="event-cover"
-          type="text"
-          value={coverPhotoUrl}
-          onChange={(e) => setCoverPhotoUrl(e.target.value)}
-          placeholder="https://... (직접 URL 입력도 가능)"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-        />
+        <div className="flex items-center gap-3">
+          <label htmlFor="event-cover-file" className="text-xs text-zinc-500 dark:text-zinc-400">
+            <BilingualInline jp="または新しい画像をアップロード" kr="또는 새 이미지 업로드" />
+          </label>
+          <input
+            id="event-cover-file"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="text-sm text-zinc-700 file:mr-3 file:rounded-full file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-amber-800 dark:text-zinc-300 dark:file:bg-amber-900/40 dark:file:text-amber-300"
+          />
+        </div>
+        {isProcessingImage && (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <BilingualInline jp="画像を処理中..." kr="이미지 처리 중..." />
+          </p>
+        )}
+        {coverPhotoUrl && !isProcessingImage && (
+          <img src={coverPhotoUrl} alt="プレビュー / 미리보기" className="h-20 w-20 rounded-lg object-cover" />
+        )}
       </div>
 
       <div className="flex flex-col gap-1">
@@ -168,7 +206,7 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isProcessingImage}
         aria-label="イベント投稿 / 이벤트 등록"
         className="mt-1 inline-flex items-center justify-center rounded-full bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
       >
