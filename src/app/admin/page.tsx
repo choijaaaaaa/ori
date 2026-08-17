@@ -1,24 +1,34 @@
 // 관리자 대시보드 개요 — 설문 응답 요약과 주요 화면 바로가기
 import Link from "next/link";
 import { repository } from "@/lib/repository";
-import type { SurveyResponse } from "@/lib/types";
+import type { Application, ApplicationStatus, SurveyResponse } from "@/lib/types";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
 export const dynamic = "force-dynamic";
 
 async function loadOverview(): Promise<
-  | { ok: true; responses: SurveyResponse[] }
+  | { ok: true; responses: SurveyResponse[]; applications: Application[] }
   | { ok: false }
 > {
   try {
-    const responses = await repository.listSurveyResponses();
-    return { ok: true, responses };
+    const [responses, applications] = await Promise.all([
+      repository.listSurveyResponses(),
+      repository.listApplications(),
+    ]);
+    return { ok: true, responses, applications };
   } catch (error) {
     console.error("대시보드 데이터 로드 실패", error);
     return { ok: false };
   }
 }
+
+const APPLICATION_STATUS_LABEL: Record<ApplicationStatus, { jp: string; kr: string }> = {
+  pending: { jp: "保留中", kr: "대기중" },
+  confirmed: { jp: "確定", kr: "확정" },
+  attended: { jp: "参加済み", kr: "참석완료" },
+  cancelled: { jp: "キャンセル", kr: "취소" },
+};
 
 const SHORTCUTS = [
   { href: "/admin/events", jp: "イベント管理", kr: "이벤트관리" },
@@ -93,6 +103,69 @@ export default async function AdminDashboardPage() {
                     </time>
                   </li>
                 ))}
+              </ul>
+            )}
+          </section>
+
+          <section aria-label="申し込み概要 / 신청 통계" className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <BilingualInline jp="総申し込み数" kr="전체 신청 수" />
+                </p>
+                <p className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {data.applications.length}件
+                </p>
+              </div>
+              <div className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <BilingualInline jp="ステータス別" kr="상태별" />
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {(Object.keys(APPLICATION_STATUS_LABEL) as ApplicationStatus[]).map((status) => (
+                    <span
+                      key={status}
+                      className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                    >
+                      <BilingualInline
+                        jp={APPLICATION_STATUS_LABEL[status].jp}
+                        kr={APPLICATION_STATUS_LABEL[status].kr}
+                      />
+                      : {data.applications.filter((a) => a.status === status).length}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section aria-labelledby="recent-applications-heading" className="flex flex-col gap-3">
+            <h2 id="recent-applications-heading" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              <BilingualInline jp="最近の申し込み" kr="최근 신청" />
+            </h2>
+            {data.applications.length === 0 ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">まだ申し込みがありません。 (아직 신청이 없습니다.)</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {[...data.applications]
+                  .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+                  .slice(0, 5)
+                  .map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between rounded-lg border border-amber-100 bg-white px-4 py-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                    >
+                      <Link
+                        href={`/admin/participants/${encodeURIComponent(a.name)}`}
+                        className="font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+                      >
+                        {a.name}
+                      </Link>
+                      <time dateTime={a.submittedAt} className="text-xs text-zinc-400">
+                        {new Date(a.submittedAt).toLocaleDateString("ja-JP")}
+                      </time>
+                    </li>
+                  ))}
               </ul>
             )}
           </section>

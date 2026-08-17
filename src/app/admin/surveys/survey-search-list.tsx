@@ -5,11 +5,25 @@ import Link from "next/link";
 import { useState } from "react";
 import type { SurveyResponse } from "@/lib/types";
 import { BilingualInline } from "@/components/bilingual";
+import { downloadCsv } from "@/lib/csv";
 
 function summarizeAnswers(answers: Record<string, string>): string {
   const entries = Object.entries(answers);
   if (entries.length === 0) return "-";
   return entries.map(([key, value]) => `${key}: ${value}`).join(" · ");
+}
+
+function handleDownload(rows: SurveyResponse[]) {
+  const header = ["이름", "연락처", "제출일시", "답변"];
+  const body = rows.map((r) => [
+    r.participantName,
+    r.contact ?? "",
+    r.submittedAt,
+    Object.entries(r.answers)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(" / "),
+  ]);
+  downloadCsv("survey-responses.csv", [header, ...body]);
 }
 
 export default function SurveySearchList({ responses }: { responses: SurveyResponse[] }) {
@@ -21,14 +35,24 @@ export default function SurveySearchList({ responses }: { responses: SurveyRespo
 
   return (
     <div className="flex flex-col gap-3">
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="お名前で検索 / 이름으로 검색"
-        aria-label="お名前で検索 / 이름으로 검색"
-        className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="お名前で検索 / 이름으로 검색"
+          aria-label="お名前で検索 / 이름으로 검색"
+          className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+        />
+        <button
+          type="button"
+          onClick={() => handleDownload(filtered)}
+          aria-label="CSVダウンロード / CSV다운로드"
+          className="rounded-md border border-amber-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+        >
+          <BilingualInline jp="CSVダウンロード" kr="CSV다운로드" />
+        </button>
+      </div>
 
       {filtered.length === 0 ? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">

@@ -2,6 +2,7 @@
 import { repository } from "@/lib/repository";
 import type { Photo } from "@/lib/types";
 import PhotoForm from "./photo-form";
+import DeletePhotoButton from "./delete-photo-button";
 import { Bilingual } from "@/components/bilingual";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
@@ -68,6 +69,7 @@ export default async function AdminPhotosPage() {
                 {photo.caption && (
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">{photo.caption}</p>
                 )}
+                <DeletePhotoButton photoId={photo.id} />
               </li>
             ))}
           </ul>

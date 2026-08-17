@@ -20,9 +20,23 @@ export interface DataRepository {
     capacity?: number;
     closed?: boolean;
   }): Promise<EventPost>;
+  updateEvent(
+    id: string,
+    input: Partial<{
+      title: string;
+      content: string;
+      eventDate: string | null;
+      coverPhotoUrl: string | null;
+      venueInfo: string | null;
+      capacity: number | null;
+      closed: boolean;
+    }>
+  ): Promise<EventPost>;
+  deleteEvent(id: string): Promise<void>;
 
   listPhotos(): Promise<Photo[]>;
   addPhoto(input: { url: string; caption?: string }): Promise<Photo>;
+  deletePhoto(id: string): Promise<void>;
 
   listSurveyResponses(): Promise<SurveyResponse[]>;
   createSurveyResponse(input: {

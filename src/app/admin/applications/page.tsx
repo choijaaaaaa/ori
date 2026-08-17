@@ -4,6 +4,7 @@ import { repository } from "@/lib/repository";
 import type { Application, ApplicationStatus, EventPost } from "@/lib/types";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import StatusSelect from "./status-select";
+import CsvDownloadButton from "./csv-download-button";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
 export const dynamic = "force-dynamic";
@@ -81,12 +82,15 @@ export default async function AdminApplicationsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Bilingual
-        as="h1"
-        className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
-        jp="申し込み一覧"
-        kr="신청 내역"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Bilingual
+          as="h1"
+          className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
+          jp="申し込み一覧"
+          kr="신청 내역"
+        />
+        {data.ok && <CsvDownloadButton applications={data.applications} events={data.events} />}
+      </div>
 
       {!data.ok && (
         <p

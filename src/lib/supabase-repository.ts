@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, PHOTOS_BUCKET } from "./supabase";
 import type { DataRepository } from "./repository";
 import type {
   EventPost,
@@ -146,6 +146,42 @@ export class SupabaseRepository implements DataRepository {
     return mapEvent(data);
   }
 
+  async updateEvent(
+    id: string,
+    input: Partial<{
+      title: string;
+      content: string;
+      eventDate: string | null;
+      coverPhotoUrl: string | null;
+      venueInfo: string | null;
+      capacity: number | null;
+      closed: boolean;
+    }>
+  ): Promise<EventPost> {
+    const patch: Record<string, unknown> = {};
+    if (input.title !== undefined) patch.title = input.title;
+    if (input.content !== undefined) patch.content = input.content;
+    if (input.eventDate !== undefined) patch.event_date = input.eventDate;
+    if (input.coverPhotoUrl !== undefined) patch.cover_photo_url = input.coverPhotoUrl;
+    if (input.venueInfo !== undefined) patch.venue_info = input.venueInfo;
+    if (input.capacity !== undefined) patch.capacity = input.capacity;
+    if (input.closed !== undefined) patch.closed = input.closed;
+
+    const { data, error } = await supabase
+      .from("events")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return mapEvent(data);
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    const { error } = await supabase.from("events").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
   async listPhotos(): Promise<Photo[]> {
     const { data, error } = await supabase
       .from("photos")
@@ -163,6 +199,26 @@ export class SupabaseRepository implements DataRepository {
       .single();
     if (error) throw new Error(error.message);
     return mapPhoto(data);
+  }
+
+  async deletePhoto(id: string): Promise<void> {
+    const { data: photo, error: fetchError } = await supabase
+      .from("photos")
+      .select("url")
+      .eq("id", id)
+      .maybeSingle();
+    if (fetchError) throw new Error(fetchError.message);
+
+    const { error } = await supabase.from("photos").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+
+    // 우리 Storage에 업로드된 사진이면 파일도 같이 지운다. 외부 URL(시드 데이터 등)은 그냥 둔다.
+    const marker = `/storage/v1/object/public/${PHOTOS_BUCKET}/`;
+    const idx = photo?.url ? photo.url.indexOf(marker) : -1;
+    if (idx >= 0) {
+      const path = photo!.url.slice(idx + marker.length);
+      await supabase.storage.from(PHOTOS_BUCKET).remove([path]).catch(() => undefined);
+    }
   }
 
   async listSurveyResponses(): Promise<SurveyResponse[]> {
