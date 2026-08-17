@@ -19,4 +19,5 @@ export const supabase = createClient(url, serviceRoleKey, {
   db: { schema: "ori" },
 });
 
-export const PHOTOS_BUCKET = "photos";
+// health-shorts 프로젝트와 공유 중이라 이름 충돌을 피하려고 접두사를 붙였다.
+export const PHOTOS_BUCKET = "ori-photos";

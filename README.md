@@ -4,7 +4,9 @@
 
 ## 데이터 저장
 
-Supabase(Postgres + Storage)를 사용한다. `src/lib/repository.ts`의 `DataRepository` 인터페이스를 `src/lib/supabase-repository.ts`(`SupabaseRepository`)가 구현하며, 관리자 비밀번호는 `admin_auth` 테이블, 사진/이벤트 대표사진은 `photos` Storage 버킷(공개)에 업로드된다. 스키마는 `supabase/schema.sql`에 있다.
+Supabase(Postgres + Storage)를 사용한다. `src/lib/repository.ts`의 `DataRepository` 인터페이스를 `src/lib/supabase-repository.ts`(`SupabaseRepository`)가 구현하며, 관리자 비밀번호는 `admin_auth` 테이블, 사진/이벤트 대표사진은 `ori-photos` Storage 버킷(공개)에 업로드된다. 스키마는 `supabase/schema.sql`에 있다.
+
+⚠️ **현재 ori 전용 Supabase 프로젝트가 아니라 health-shorts 프로젝트 안의 `ori` 스키마(`db.schema: "ori"`, `src/lib/supabase.ts`)에 얹혀 있다** — 무료 티어 2프로젝트 한계 때문(2026-08-13, 자세한 내용은 `CLAUDE.md`). Storage 버킷은 스키마가 아니라 프로젝트 단위라서 이 이전 때 버킷이 함께 안 옮겨져 업로드가 깨져 있었고(2026-08-17 발견·수정), health-shorts와 이름이 겹치지 않게 `ori-photos`로 새로 만들었다. 원래 ori 전용 프로젝트 자격증명은 `.env.supabase-cli`에 남아있다.
 
 ## 로컬 실행
 
@@ -52,7 +54,7 @@ npm run dev
 
 ## Supabase 스키마 적용
 
-`supabase/schema.sql`을 Supabase 프로젝트의 SQL Editor(또는 Management API)에서 실행하면 테이블이 만들어진다. `photos`라는 이름의 공개 Storage 버킷도 별도로 만들어야 한다(대시보드 Storage 탭 또는 API로 생성, `public: true`).
+`supabase/schema.sql`을 Supabase 프로젝트의 SQL Editor(또는 Management API)에서 실행하면 테이블이 만들어진다. `ori-photos`라는 이름의 공개 Storage 버킷도 별도로 만들어야 한다(대시보드 Storage 탭 또는 API로 생성, `public: true`).
 
 ## 다음 단계
 
