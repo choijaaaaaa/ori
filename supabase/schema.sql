@@ -5,6 +5,8 @@ create table if not exists events (
   event_date date,
   cover_photo_url text,
   venue_info text,
+  capacity integer,
+  closed boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -20,8 +22,10 @@ create table if not exists survey_responses (
   participant_name text not null,
   contact text,
   answers jsonb not null default '{}'::jsonb,
+  event_id uuid references events(id) on delete set null,
   submitted_at timestamptz not null default now()
 );
+create index if not exists survey_responses_event_id_idx on survey_responses (event_id);
 
 create table if not exists participant_notes (
   id uuid primary key default gen_random_uuid(),
@@ -38,6 +42,7 @@ create table if not exists applications (
   contact text,
   message text,
   event_id uuid references events(id) on delete set null,
+  status text not null default 'pending' check (status in ('pending','confirmed','attended','cancelled')),
   submitted_at timestamptz not null default now()
 );
 create index if not exists applications_event_id_idx on applications (event_id);

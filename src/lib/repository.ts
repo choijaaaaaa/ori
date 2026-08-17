@@ -5,6 +5,7 @@ import type {
   SurveyResponse,
   ParticipantNote,
   Application,
+  ApplicationStatus,
 } from "./types";
 
 export interface DataRepository {
@@ -16,6 +17,8 @@ export interface DataRepository {
     eventDate?: string;
     coverPhotoUrl?: string;
     venueInfo?: string;
+    capacity?: number;
+    closed?: boolean;
   }): Promise<EventPost>;
 
   listPhotos(): Promise<Photo[]>;
@@ -26,18 +29,21 @@ export interface DataRepository {
     participantName: string;
     contact?: string;
     answers: Record<string, string>;
+    eventId?: string;
   }): Promise<SurveyResponse>;
 
   listNotesByParticipant(participantName: string): Promise<ParticipantNote[]>;
   addNote(input: { participantName: string; note: string; tags: string[] }): Promise<ParticipantNote>;
 
   listApplications(): Promise<Application[]>;
+  countActiveApplications(eventId: string): Promise<number>;
   createApplication(input: {
     name: string;
     contact?: string;
     message?: string;
     eventId?: string;
   }): Promise<Application>;
+  updateApplicationStatus(id: string, status: ApplicationStatus): Promise<Application>;
 }
 
 export const repository: DataRepository = new SupabaseRepository();

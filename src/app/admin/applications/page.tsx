@@ -1,7 +1,9 @@
 // 관리자 전용 참가 신청 내역 — 이벤트(회차)별로 그룹핑해서 보여준다
+import Link from "next/link";
 import { repository } from "@/lib/repository";
-import type { Application, EventPost } from "@/lib/types";
+import type { Application, ApplicationStatus, EventPost } from "@/lib/types";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
+import StatusSelect from "./status-select";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
 export const dynamic = "force-dynamic";
@@ -21,14 +23,44 @@ async function loadData(): Promise<
   }
 }
 
+const STATUS_BADGE_CLASS: Record<ApplicationStatus, string> = {
+  pending: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+  confirmed: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  attended: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+};
+
+const STATUS_BADGE_LABEL: Record<ApplicationStatus, { jp: string; kr: string }> = {
+  pending: { jp: "保留中", kr: "대기중" },
+  confirmed: { jp: "確定", kr: "확정" },
+  attended: { jp: "参加済み", kr: "참석완료" },
+  cancelled: { jp: "キャンセル", kr: "취소" },
+};
+
 function ApplicationCard({ a }: { a: Application }) {
   return (
     <li className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-semibold text-zinc-900 dark:text-zinc-50">{a.name}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/admin/participants/${encodeURIComponent(a.name)}`}
+            className="font-semibold text-zinc-900 hover:underline dark:text-zinc-50"
+            aria-label={`${a.name} — お名前 / 이름`}
+          >
+            {a.name}
+          </Link>
+          <span
+            className={`w-fit rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASS[a.status]}`}
+          >
+            <BilingualInline jp={STATUS_BADGE_LABEL[a.status].jp} kr={STATUS_BADGE_LABEL[a.status].kr} />
+          </span>
+        </div>
         <time dateTime={a.submittedAt} className="text-xs text-zinc-400">
           <BilingualInline jp="申込日" kr="신청일" />: {new Date(a.submittedAt).toLocaleString("ja-JP")}
         </time>
+      </div>
+      <div className="mt-2">
+        <StatusSelect applicationId={a.id} currentStatus={a.status} />
       </div>
       {a.contact && (
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">

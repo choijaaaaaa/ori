@@ -18,6 +18,7 @@ export async function POST(request: Request) {
   const participantName =
     typeof body?.participantName === "string" ? body.participantName.trim() : "";
   const contact = typeof body?.contact === "string" ? body.contact.trim() : "";
+  const eventId = typeof body?.eventId === "string" ? body.eventId.trim() : "";
   const answers =
     body?.answers && typeof body.answers === "object" && !Array.isArray(body.answers)
       ? (body.answers as Record<string, string>)
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
       participantName,
       contact: contact || undefined,
       answers,
+      eventId: eventId || undefined,
     });
   } catch (error) {
     console.error("설문 응답 저장 실패", error);

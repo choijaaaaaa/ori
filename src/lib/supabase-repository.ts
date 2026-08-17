@@ -6,6 +6,7 @@ import type {
   SurveyResponse,
   ParticipantNote,
   Application,
+  ApplicationStatus,
 } from "./types";
 
 function mapEvent(row: {
@@ -15,6 +16,8 @@ function mapEvent(row: {
   event_date: string | null;
   cover_photo_url: string | null;
   venue_info: string | null;
+  capacity: number | null;
+  closed: boolean;
   created_at: string;
 }): EventPost {
   return {
@@ -24,6 +27,8 @@ function mapEvent(row: {
     eventDate: row.event_date ?? undefined,
     coverPhotoUrl: row.cover_photo_url ?? undefined,
     venueInfo: row.venue_info ?? undefined,
+    capacity: row.capacity ?? undefined,
+    closed: row.closed,
     createdAt: row.created_at,
   };
 }
@@ -37,6 +42,7 @@ function mapSurveyResponse(row: {
   participant_name: string;
   contact: string | null;
   answers: Record<string, string>;
+  event_id: string | null;
   submitted_at: string;
 }): SurveyResponse {
   return {
@@ -44,6 +50,7 @@ function mapSurveyResponse(row: {
     participantName: row.participant_name,
     contact: row.contact ?? undefined,
     answers: row.answers,
+    eventId: row.event_id ?? undefined,
     submittedAt: row.submitted_at,
   };
 }
@@ -70,6 +77,7 @@ function mapApplication(row: {
   contact: string | null;
   message: string | null;
   event_id: string | null;
+  status: ApplicationStatus;
   submitted_at: string;
 }): Application {
   return {
@@ -78,19 +86,32 @@ function mapApplication(row: {
     contact: row.contact ?? undefined,
     message: row.message ?? undefined,
     eventId: row.event_id ?? undefined,
+    status: row.status,
     submittedAt: row.submitted_at,
   };
 }
 
+// 홈 화면 이벤트 카드는 "다가오는 순"으로 보여준다: 오늘 이후 예정 이벤트를 날짜 오름차순으로
+// 먼저 보여주고, 날짜 미지정 이벤트, 그다음 지난 이벤트(최근순)를 아래에 붙인다.
+function sortEventsUpcomingFirst(events: EventPost[]): EventPost[] {
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = events
+    .filter((e) => e.eventDate && e.eventDate >= today)
+    .sort((a, b) => a.eventDate!.localeCompare(b.eventDate!));
+  const undated = events
+    .filter((e) => !e.eventDate)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const past = events
+    .filter((e) => e.eventDate && e.eventDate < today)
+    .sort((a, b) => b.eventDate!.localeCompare(a.eventDate!));
+  return [...upcoming, ...undated, ...past];
+}
+
 export class SupabaseRepository implements DataRepository {
   async listEvents(): Promise<EventPost[]> {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("event_date", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("events").select("*");
     if (error) throw new Error(error.message);
-    return (data ?? []).map(mapEvent);
+    return sortEventsUpcomingFirst((data ?? []).map(mapEvent));
   }
 
   async getEvent(id: string): Promise<EventPost | null> {
@@ -105,6 +126,8 @@ export class SupabaseRepository implements DataRepository {
     eventDate?: string;
     coverPhotoUrl?: string;
     venueInfo?: string;
+    capacity?: number;
+    closed?: boolean;
   }): Promise<EventPost> {
     const { data, error } = await supabase
       .from("events")
@@ -114,6 +137,8 @@ export class SupabaseRepository implements DataRepository {
         event_date: input.eventDate ?? null,
         cover_photo_url: input.coverPhotoUrl ?? null,
         venue_info: input.venueInfo ?? null,
+        capacity: input.capacity ?? null,
+        closed: input.closed ?? false,
       })
       .select("*")
       .single();
@@ -153,6 +178,7 @@ export class SupabaseRepository implements DataRepository {
     participantName: string;
     contact?: string;
     answers: Record<string, string>;
+    eventId?: string;
   }): Promise<SurveyResponse> {
     const { data, error } = await supabase
       .from("survey_responses")
@@ -160,6 +186,7 @@ export class SupabaseRepository implements DataRepository {
         participant_name: input.participantName,
         contact: input.contact ?? null,
         answers: input.answers,
+        event_id: input.eventId ?? null,
       })
       .select("*")
       .single();
@@ -200,6 +227,16 @@ export class SupabaseRepository implements DataRepository {
     return (data ?? []).map(mapApplication);
   }
 
+  async countActiveApplications(eventId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", eventId)
+      .neq("status", "cancelled");
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  }
+
   async createApplication(input: {
     name: string;
     contact?: string;
@@ -214,6 +251,17 @@ export class SupabaseRepository implements DataRepository {
         message: input.message ?? null,
         event_id: input.eventId ?? null,
       })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return mapApplication(data);
+  }
+
+  async updateApplicationStatus(id: string, status: ApplicationStatus): Promise<Application> {
+    const { data, error } = await supabase
+      .from("applications")
+      .update({ status })
+      .eq("id", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);

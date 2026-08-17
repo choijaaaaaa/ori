@@ -40,6 +40,10 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  // 정원 표시용 활성 신청자 수 — 조회 실패는 표시를 생략할 뿐 페이지 전체를 깨뜨리지 않는다.
+  const activeCount = await repository.countActiveApplications(event.id).catch(() => 0);
+  const isFull = event.closed || (typeof event.capacity === "number" && activeCount >= event.capacity);
+
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-amber-50 dark:bg-zinc-950">
       <DecorativeBackground />
@@ -60,12 +64,27 @@ export default async function EventDetailPage({
         )}
 
         <div className="flex flex-col gap-2">
-          {event.eventDate && (
-            <span className="w-fit rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-              {new Date(event.eventDate).toLocaleDateString("ja-JP")}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {event.eventDate && (
+              <span className="w-fit rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                {new Date(event.eventDate).toLocaleDateString("ja-JP")}
+              </span>
+            )}
+            {isFull && (
+              <span className="w-fit rounded-full bg-zinc-200 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
+                <BilingualInline jp="満席・受付終了" kr="마감" />
+              </span>
+            )}
+          </div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{event.title}</h1>
+          {typeof event.capacity === "number" && (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <BilingualInline
+                jp={`定員 ${event.capacity}名中 ${activeCount}名申し込み済み`}
+                kr={`정원 ${event.capacity}명 중 ${activeCount}명 신청`}
+              />
+            </p>
+          )}
         </div>
 
         <p className="whitespace-pre-wrap text-sm leading-7 text-zinc-600 dark:text-zinc-300">
@@ -89,13 +108,24 @@ export default async function EventDetailPage({
           </section>
         )}
 
-        <Link
-          href={`/apply?eventId=${event.id}`}
-          className="mt-4 inline-flex w-fit items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
-          aria-label="参加を申し込む / 참가 신청하기"
-        >
-          <BilingualInline jp="参加を申し込む" kr="참가 신청하기" />
-        </Link>
+        {isFull ? (
+          <div className="mt-4 flex flex-col gap-1.5">
+            <span
+              aria-disabled="true"
+              className="inline-flex w-fit cursor-not-allowed items-center justify-center rounded-full bg-zinc-200 px-6 py-3 text-sm font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
+            >
+              <BilingualInline jp="受付を終了しました" kr="마감되었습니다" />
+            </span>
+          </div>
+        ) : (
+          <Link
+            href={`/apply?eventId=${event.id}`}
+            className="mt-4 inline-flex w-fit items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
+            aria-label="参加を申し込む / 참가 신청하기"
+          >
+            <BilingualInline jp="参加を申し込む" kr="참가 신청하기" />
+          </Link>
+        )}
       </main>
     </div>
   );

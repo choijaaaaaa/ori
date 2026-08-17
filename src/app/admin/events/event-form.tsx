@@ -19,6 +19,8 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
   const [coverImageBlob, setCoverImageBlob] = useState<Blob | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [venueInfo, setVenueInfo] = useState("");
+  const [capacity, setCapacity] = useState("");
+  const [closed, setClosed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +71,8 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
           eventDate: eventDate || undefined,
           coverPhotoUrl: finalCoverUrl || undefined,
           venueInfo: venueInfo || undefined,
+          capacity: capacity.trim() === "" ? undefined : Number(capacity),
+          closed,
         }),
       });
 
@@ -85,6 +89,8 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
       setCoverPreviewUrl("");
       setCoverImageBlob(null);
       setVenueInfo("");
+      setCapacity("");
+      setClosed(false);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "네트워크 오류로 이벤트 등록에 실패했습니다.");
@@ -212,6 +218,35 @@ export default function EventForm({ photos }: { photos: Photo[] }) {
           rows={3}
           className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
         />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="event-capacity" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <BilingualInline jp="定員（任意）" kr="정원 (선택)" />
+        </label>
+        <input
+          id="event-capacity"
+          type="number"
+          min={1}
+          step={1}
+          value={capacity}
+          onChange={(e) => setCapacity(e.target.value)}
+          placeholder="無制限 / 무제한"
+          className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          id="event-closed"
+          type="checkbox"
+          checked={closed}
+          onChange={(e) => setClosed(e.target.checked)}
+          className="h-4 w-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500 dark:border-zinc-700"
+        />
+        <label htmlFor="event-closed" className="text-sm text-zinc-700 dark:text-zinc-300">
+          <BilingualInline jp="登録時点で募集を締め切る" kr="최초 등록 시 곧바로 마감 상태로 만들기" />
+        </label>
       </div>
 
       {error && (

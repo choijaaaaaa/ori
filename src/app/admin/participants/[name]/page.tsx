@@ -1,22 +1,38 @@
-// 참가자 상세 — 설문 이력 + 운영자 메모(참가자 CRM)
+// 참가자 상세 — 신청 이력 + 설문 이력 + 운영자 메모(참가자 CRM)
 import { repository } from "@/lib/repository";
-import type { ParticipantNote, SurveyResponse } from "@/lib/types";
+import type { Application, EventPost, ParticipantNote, SurveyResponse } from "@/lib/types";
 import NoteForm from "./note-form";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
+
+const STATUS_LABEL: Record<Application["status"], { jp: string; kr: string }> = {
+  pending: { jp: "保留中", kr: "대기중" },
+  confirmed: { jp: "確定", kr: "확정" },
+  attended: { jp: "参加済み", kr: "참석완료" },
+  cancelled: { jp: "キャンセル", kr: "취소" },
+};
 
 async function loadParticipant(
   name: string
 ): Promise<
-  | { ok: true; responses: SurveyResponse[]; notes: ParticipantNote[] }
+  | {
+      ok: true;
+      responses: SurveyResponse[];
+      notes: ParticipantNote[];
+      applications: Application[];
+      events: EventPost[];
+    }
   | { ok: false }
 > {
   try {
-    const [allResponses, notes] = await Promise.all([
+    const [allResponses, notes, allApplications, events] = await Promise.all([
       repository.listSurveyResponses(),
       repository.listNotesByParticipant(name),
+      repository.listApplications(),
+      repository.listEvents(),
     ]);
     const responses = allResponses.filter((r) => r.participantName === name);
-    return { ok: true, responses, notes };
+    const applications = allApplications.filter((a) => a.name === name);
+    return { ok: true, responses, notes, applications, events };
   } catch (error) {
     console.error("참가자 상세 데이터 로드 실패", error);
     return { ok: false };
@@ -55,6 +71,52 @@ export default async function ParticipantDetailPage({
 
       {data.ok && (
         <>
+          <section aria-labelledby="applications-heading" className="flex flex-col gap-3">
+            <Bilingual
+              as="h2"
+              className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+              jp={<span id="applications-heading">申し込み履歴</span>}
+              kr="신청 이력"
+            />
+            {data.applications.length === 0 ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                申し込み履歴がありません。
+                <span className="block text-xs opacity-80">신청 이력이 없습니다.</span>
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {data.applications.map((a) => {
+                  const event = data.events.find((e) => e.id === a.eventId);
+                  return (
+                    <li
+                      key={a.id}
+                      className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                          {event ? event.title : <BilingualInline jp="回未指定" kr="회차 미지정" />}
+                        </span>
+                        <time dateTime={a.submittedAt} className="text-xs text-zinc-400">
+                          <BilingualInline jp="申込日" kr="신청일" />:{" "}
+                          {new Date(a.submittedAt).toLocaleString("ja-JP")}
+                        </time>
+                      </div>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        <BilingualInline jp="ステータス" kr="상태" />: {STATUS_LABEL[a.status].jp} (
+                        {STATUS_LABEL[a.status].kr})
+                      </p>
+                      {a.message && (
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">
+                          <BilingualInline jp="申し込み内容" kr="신청 내용" />: {a.message}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
           <section aria-labelledby="responses-heading" className="flex flex-col gap-3">
             <Bilingual
               as="h2"

@@ -13,5 +13,20 @@ export default async function ApplyPage({
   const { eventId } = await searchParams;
   const events = await repository.listEvents().catch(() => []);
 
-  return <ApplyForm events={events} initialEventId={eventId} />;
+  // 정원/마감 여부를 옵션에 표시하기 위해 회차별 활성 신청자 수를 함께 가져온다.
+  // 개별 조회가 실패해도 폼 전체가 깨지면 안 되므로 실패한 회차는 0명으로 처리한다.
+  const activeCounts = await Promise.all(
+    events.map((event) => repository.countActiveApplications(event.id).catch(() => 0))
+  );
+  const activeCountByEventId = Object.fromEntries(
+    events.map((event, idx) => [event.id, activeCounts[idx]])
+  );
+
+  return (
+    <ApplyForm
+      events={events}
+      activeCountByEventId={activeCountByEventId}
+      initialEventId={eventId}
+    />
+  );
 }

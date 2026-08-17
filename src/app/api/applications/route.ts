@@ -44,6 +44,25 @@ export async function POST(request: Request) {
     );
   }
 
+  if (eventId) {
+    try {
+      const event = await repository.getEvent(eventId);
+      if (event) {
+        const activeCount = await repository.countActiveApplications(eventId);
+        const isFull = typeof event.capacity === "number" && activeCount >= event.capacity;
+        if (event.closed || isFull) {
+          return NextResponse.json(
+            { error: { code: "EVENT_FULL", message: "죄송합니다, 해당 회차는 마감되었습니다." } },
+            { status: 409 }
+          );
+        }
+      }
+    } catch (error) {
+      console.error("정원 확인 실패", error);
+      return internalErrorResponse("신청 접수 중 오류가 발생했습니다.");
+    }
+  }
+
   let created;
   try {
     created = await repository.createApplication({

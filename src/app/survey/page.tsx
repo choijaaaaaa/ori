@@ -1,7 +1,8 @@
 // 공개 설문 참여 폼 — 제출 성공 시 같은 화면에서 감사 메시지로 전환
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
 
@@ -13,6 +14,17 @@ const LEVEL_OPTIONS = [
 ];
 
 export default function SurveyPage() {
+  return (
+    <Suspense fallback={null}>
+      <SurveyFormInner />
+    </Suspense>
+  );
+}
+
+// QR로 넘어올 때 ?eventId=가 붙을 수 있어 useSearchParams가 필요 — 부모에서 Suspense로 감싼다.
+function SurveyFormInner() {
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId");
   const [participantName, setParticipantName] = useState("");
   const [contact, setContact] = useState("");
   const [japaneseLevel, setJapaneseLevel] = useState("");
@@ -41,6 +53,7 @@ export default function SurveyPage() {
           participantName: participantName.trim(),
           contact: contact.trim() || undefined,
           answers,
+          eventId: eventId || undefined,
         }),
       });
 

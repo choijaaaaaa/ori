@@ -1,8 +1,8 @@
-// 관리자 전용 설문 응답 목록 — 참가자별 상세로 연결
-import Link from "next/link";
+// 관리자 전용 설문 응답 목록 — 참가자별 상세로 연결, 이름 검색 지원
 import { repository } from "@/lib/repository";
 import type { SurveyResponse } from "@/lib/types";
-import { Bilingual, BilingualInline } from "@/components/bilingual";
+import { Bilingual } from "@/components/bilingual";
+import SurveySearchList from "./survey-search-list";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
 export const dynamic = "force-dynamic";
@@ -18,12 +18,6 @@ async function loadResponses(): Promise<
     console.error("설문 응답 목록 로드 실패", error);
     return { ok: false };
   }
-}
-
-function summarizeAnswers(answers: Record<string, string>): string {
-  const entries = Object.entries(answers);
-  if (entries.length === 0) return "-";
-  return entries.map(([key, value]) => `${key}: ${value}`).join(" · ");
 }
 
 export default async function AdminSurveysPage() {
@@ -57,38 +51,7 @@ export default async function AdminSurveysPage() {
         </p>
       )}
 
-      {data.ok && data.responses.length > 0 && (
-        <ul className="flex flex-col gap-3">
-          {data.responses.map((r) => (
-            <li
-              key={r.id}
-              className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link
-                  href={`/admin/participants/${encodeURIComponent(r.participantName)}`}
-                  className="font-semibold text-zinc-900 hover:underline dark:text-zinc-50"
-                  aria-label={`${r.participantName} — お名前 / 이름`}
-                >
-                  {r.participantName}
-                </Link>
-                <time dateTime={r.submittedAt} className="text-xs text-zinc-400">
-                  <BilingualInline jp="送信日" kr="제출일" />:{" "}
-                  {new Date(r.submittedAt).toLocaleString("ja-JP")}
-                </time>
-              </div>
-              {r.contact && (
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  <BilingualInline jp="連絡先" kr="연락처" />: {r.contact}
-                </p>
-              )}
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-                <BilingualInline jp="回答" kr="답변" />: {summarizeAnswers(r.answers)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      {data.ok && data.responses.length > 0 && <SurveySearchList responses={data.responses} />}
     </div>
   );
 }

@@ -6,6 +6,8 @@ export interface EventPost {
   eventDate?: string; // 모임 일자 (YYYY-MM-DD, 선택)
   coverPhotoUrl?: string; // 카드 대표 사진
   venueInfo?: string; // 해당 회차 오시는 길 (선택, 없으면 홈의 기본 안내를 따른다)
+  capacity?: number; // 정원 (선택, 없으면 무제한)
+  closed: boolean; // 관리자가 수동으로 마감했는지
   createdAt: string;
 }
 
@@ -21,6 +23,7 @@ export interface SurveyResponse {
   participantName: string;
   contact?: string;
   answers: Record<string, string>;
+  eventId?: string; // 어느 회차에 대한 설문인지 (선택)
   submittedAt: string;
 }
 
@@ -32,11 +35,14 @@ export interface ParticipantNote {
   createdAt: string;
 }
 
+export type ApplicationStatus = "pending" | "confirmed" | "attended" | "cancelled";
+
 export interface Application {
   id: string;
   name: string;
   contact?: string;
   message?: string;
   eventId?: string; // 어느 회차에 신청한 것인지 (선택, 미지정이면 일반 문의로 취급)
+  status: ApplicationStatus;
   submittedAt: string;
 }

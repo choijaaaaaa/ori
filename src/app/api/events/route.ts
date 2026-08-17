@@ -28,6 +28,11 @@ export async function POST(request: Request) {
   const eventDate = typeof body?.eventDate === "string" ? body.eventDate.trim() : "";
   const coverPhotoUrl = typeof body?.coverPhotoUrl === "string" ? body.coverPhotoUrl.trim() : "";
   const venueInfo = typeof body?.venueInfo === "string" ? body.venueInfo.trim() : "";
+  const capacity =
+    typeof body?.capacity === "number" && Number.isFinite(body.capacity) && body.capacity > 0
+      ? Math.floor(body.capacity)
+      : undefined;
+  const closed = body?.closed === true;
 
   if (!title || !content) {
     return NextResponse.json(
@@ -43,6 +48,8 @@ export async function POST(request: Request) {
       eventDate: eventDate || undefined,
       coverPhotoUrl: coverPhotoUrl || undefined,
       venueInfo: venueInfo || undefined,
+      capacity,
+      closed,
     });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {

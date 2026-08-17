@@ -9,9 +9,11 @@ import type { EventPost } from "@/lib/types";
 
 export default function ApplyForm({
   events,
+  activeCountByEventId,
   initialEventId,
 }: {
   events: EventPost[];
+  activeCountByEventId: Record<string, number>;
   initialEventId?: string;
 }) {
   const [name, setName] = useState("");
@@ -53,8 +55,10 @@ export default function ApplyForm({
   }
 
   if (status === "done") {
+    // 선택한 회차가 있으면 설문도 그 회차 소속으로 이어지도록 eventId를 실어 보낸다.
+    const surveyPath = eventId ? `/survey?eventId=${eventId}` : "/survey";
     const surveyUrl =
-      typeof window !== "undefined" ? `${window.location.origin}/survey` : "/survey";
+      typeof window !== "undefined" ? `${window.location.origin}${surveyPath}` : surveyPath;
 
     return (
       <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-amber-50 px-6 py-16 text-center dark:bg-zinc-950">
@@ -80,7 +84,7 @@ export default function ApplyForm({
           <p className="text-xs text-zinc-400">
             <BilingualInline jp="読み取れない場合はこちらをタップ" kr="스캔이 안 되면 여기를 눌러주세요" />
             {" — "}
-            <a href="/survey" className="underline hover:text-amber-600">
+            <a href={surveyPath} className="underline hover:text-amber-600">
               {surveyUrl}
             </a>
           </p>
@@ -127,12 +131,18 @@ export default function ApplyForm({
                 className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-amber-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
               >
                 <option value="">未定・特に希望なし / 미정 · 특별히 없음</option>
-                {events.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.eventDate ? `${event.eventDate} — ` : ""}
-                    {event.title}
-                  </option>
-                ))}
+                {events.map((event) => {
+                  const activeCount = activeCountByEventId[event.id] ?? 0;
+                  const isFull =
+                    event.closed || (typeof event.capacity === "number" && activeCount >= event.capacity);
+                  return (
+                    <option key={event.id} value={event.id} disabled={isFull}>
+                      {event.eventDate ? `${event.eventDate} — ` : ""}
+                      {event.title}
+                      {isFull ? " (満席 / 마감)" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}
