@@ -2,7 +2,9 @@
 import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
-import { internalErrorResponse } from "@/lib/api-error";
+import { internalErrorResponse, notFoundResponse } from "@/lib/api-error";
+import { NotFoundError } from "@/lib/errors";
+import { isValidDateString } from "@/lib/validation";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthenticated())) {
@@ -44,11 +46,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       { status: 400 }
     );
   }
+  if (patch.eventDate && !isValidDateString(patch.eventDate)) {
+    return NextResponse.json(
+      { error: { code: "INVALID_INPUT", message: "모임 일자 형식이 올바르지 않습니다 (YYYY-MM-DD)." } },
+      { status: 400 }
+    );
+  }
 
   try {
     const updated = await repository.updateEvent(id, patch);
     return NextResponse.json(updated);
   } catch (error) {
+    if (error instanceof NotFoundError) {
+      return notFoundResponse(error.message);
+    }
     console.error("이벤트 수정 실패", error);
     return internalErrorResponse("이벤트 수정 중 오류가 발생했습니다.");
   }

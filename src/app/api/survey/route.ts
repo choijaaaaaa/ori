@@ -36,13 +36,29 @@ export async function POST(request: Request) {
     );
   }
 
+  // QR이 가리키는 이벤트가 그 사이 삭제/변조됐을 수 있다 — 그런 경우 설문 자체를 잃지 않도록
+  // 이벤트 연결만 포기하고 응답은 정상 저장한다.
+  let resolvedEventId: string | undefined = eventId || undefined;
+  if (resolvedEventId) {
+    try {
+      const event = await repository.getEvent(resolvedEventId);
+      if (!event) {
+        console.error("존재하지 않는 이벤트로 설문 제출 시도 — 연결 없이 저장", resolvedEventId);
+        resolvedEventId = undefined;
+      }
+    } catch (error) {
+      console.error("이벤트 확인 실패 — 연결 없이 저장", error);
+      resolvedEventId = undefined;
+    }
+  }
+
   let created;
   try {
     created = await repository.createSurveyResponse({
       participantName,
       contact: contact || undefined,
       answers,
-      eventId: eventId || undefined,
+      eventId: resolvedEventId,
     });
   } catch (error) {
     console.error("설문 응답 저장 실패", error);

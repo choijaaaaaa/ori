@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
 import { internalErrorResponse } from "@/lib/api-error";
+import { isValidDateString } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -37,6 +38,12 @@ export async function POST(request: Request) {
   if (!title || !content) {
     return NextResponse.json(
       { error: { code: "INVALID_INPUT", message: "제목과 내용을 입력해주세요." } },
+      { status: 400 }
+    );
+  }
+  if (eventDate && !isValidDateString(eventDate)) {
+    return NextResponse.json(
+      { error: { code: "INVALID_INPUT", message: "모임 일자 형식이 올바르지 않습니다 (YYYY-MM-DD)." } },
       { status: 400 }
     );
   }

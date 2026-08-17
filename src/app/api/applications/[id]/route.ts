@@ -2,7 +2,8 @@
 import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
-import { internalErrorResponse } from "@/lib/api-error";
+import { internalErrorResponse, notFoundResponse } from "@/lib/api-error";
+import { NotFoundError } from "@/lib/errors";
 import type { ApplicationStatus } from "@/lib/types";
 
 const VALID_STATUSES: ApplicationStatus[] = ["pending", "confirmed", "attended", "cancelled"];
@@ -30,6 +31,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const updated = await repository.updateApplicationStatus(id, status as ApplicationStatus);
     return NextResponse.json(updated);
   } catch (error) {
+    if (error instanceof NotFoundError) {
+      return notFoundResponse(error.message);
+    }
     console.error("신청 상태 변경 실패", error);
     return internalErrorResponse("상태 변경 중 오류가 발생했습니다.");
   }

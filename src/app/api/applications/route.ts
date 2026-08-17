@@ -47,15 +47,25 @@ export async function POST(request: Request) {
   if (eventId) {
     try {
       const event = await repository.getEvent(eventId);
-      if (event) {
-        const activeCount = await repository.countActiveApplications(eventId);
-        const isFull = typeof event.capacity === "number" && activeCount >= event.capacity;
-        if (event.closed || isFull) {
-          return NextResponse.json(
-            { error: { code: "EVENT_FULL", message: "죄송합니다, 해당 회차는 마감되었습니다." } },
-            { status: 409 }
-          );
-        }
+      if (!event) {
+        // 신청 중 이벤트가 삭제/변조됐을 수 있다 — FK 위반으로 500이 나기 전에 명확히 안내.
+        return NextResponse.json(
+          {
+            error: {
+              code: "EVENT_NOT_FOUND",
+              message: "선택한 회차를 찾을 수 없습니다. 새로고침 후 다시 시도해주세요.",
+            },
+          },
+          { status: 400 }
+        );
+      }
+      const activeCount = await repository.countActiveApplications(eventId);
+      const isFull = typeof event.capacity === "number" && activeCount >= event.capacity;
+      if (event.closed || isFull) {
+        return NextResponse.json(
+          { error: { code: "EVENT_FULL", message: "죄송합니다, 해당 회차는 마감되었습니다." } },
+          { status: 409 }
+        );
       }
     } catch (error) {
       console.error("정원 확인 실패", error);

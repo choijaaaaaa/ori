@@ -1,4 +1,5 @@
 import { supabase, PHOTOS_BUCKET } from "./supabase";
+import { NotFoundError } from "./errors";
 import type { DataRepository } from "./repository";
 import type {
   EventPost,
@@ -116,7 +117,12 @@ export class SupabaseRepository implements DataRepository {
 
   async getEvent(id: string): Promise<EventPost | null> {
     const { data, error } = await supabase.from("events").select("*").eq("id", id).maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      // 잘못된 UUID 형식 조회는 Postgres가 22P02(invalid_text_representation)를 내는데,
+      // "그런 이벤트 없음"과 의미상 같으므로 에러 대신 null로 취급한다(오래된/조작된 QR 링크 대비).
+      if (error.code === "22P02") return null;
+      throw new Error(error.message);
+    }
     return data ? mapEvent(data) : null;
   }
 
@@ -173,13 +179,21 @@ export class SupabaseRepository implements DataRepository {
       .eq("id", id)
       .select("*")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      // PGRST116: 대상 0건(이미 삭제됨), 22P02: id 형식 자체가 잘못됨 — 둘 다 "그런 이벤트 없음".
+      if (error.code === "PGRST116" || error.code === "22P02") {
+        throw new NotFoundError("수정하려는 이벤트를 찾을 수 없습니다.");
+      }
+      throw new Error(error.message);
+    }
     return mapEvent(data);
   }
 
   async deleteEvent(id: string): Promise<void> {
     const { error } = await supabase.from("events").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    // 이미 없는 id(0건 삭제)는 성공으로 취급하는 게 자연스럽지만, 형식 자체가 잘못된 id는
+    // 매치되는 행이 있을 수 없으므로 마찬가지로 조용히 성공 처리한다.
+    if (error && error.code !== "22P02") throw new Error(error.message);
   }
 
   async listPhotos(): Promise<Photo[]> {
@@ -202,15 +216,19 @@ export class SupabaseRepository implements DataRepository {
   }
 
   async deletePhoto(id: string): Promise<void> {
+    // 형식 자체가 잘못된 id는 매치될 수 없으니 조용히 성공 처리(삭제와 동일한 idempotent 취급).
     const { data: photo, error: fetchError } = await supabase
       .from("photos")
       .select("url")
       .eq("id", id)
       .maybeSingle();
-    if (fetchError) throw new Error(fetchError.message);
+    if (fetchError) {
+      if (fetchError.code === "22P02") return;
+      throw new Error(fetchError.message);
+    }
 
     const { error } = await supabase.from("photos").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error && error.code !== "22P02") throw new Error(error.message);
 
     // 우리 Storage에 업로드된 사진이면 파일도 같이 지운다. 외부 URL(시드 데이터 등)은 그냥 둔다.
     const marker = `/storage/v1/object/public/${PHOTOS_BUCKET}/`;
@@ -320,7 +338,12 @@ export class SupabaseRepository implements DataRepository {
       .eq("id", id)
       .select("*")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.code === "PGRST116" || error.code === "22P02") {
+        throw new NotFoundError("수정하려는 신청을 찾을 수 없습니다.");
+      }
+      throw new Error(error.message);
+    }
     return mapApplication(data);
   }
 }
