@@ -54,10 +54,18 @@ create table if not exists admin_auth (
   constraint admin_auth_singleton check (id = 1)
 );
 
+create table if not exists site_texts (
+  key text primary key,
+  value_jp text not null default '',
+  value_kr text not null default '',
+  updated_at timestamptz not null default now()
+);
+
 alter table events enable row level security;
 alter table photos enable row level security;
 alter table survey_responses enable row level security;
 alter table participant_notes enable row level security;
 alter table applications enable row level security;
 alter table admin_auth enable row level security;
+alter table site_texts enable row level security;
 -- 서버(Route Handler)에서 service_role 키로만 접근하므로 별도 정책 없이 RLS로 기본 차단.

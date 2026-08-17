@@ -46,3 +46,10 @@ export interface Application {
   status: ApplicationStatus;
   submittedAt: string;
 }
+
+// 관리자가 코드 수정 없이 직접 고칠 수 있는 사이트 문구(일본어 메인 + 한국어 보조).
+export interface SiteText {
+  key: string;
+  valueJp: string;
+  valueKr: string;
+}

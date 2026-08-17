@@ -8,6 +8,7 @@ import type {
   ParticipantNote,
   Application,
   ApplicationStatus,
+  SiteText,
 } from "./types";
 
 function mapEvent(row: {
@@ -345,5 +346,29 @@ export class SupabaseRepository implements DataRepository {
       throw new Error(error.message);
     }
     return mapApplication(data);
+  }
+
+  async getSiteText(key: string): Promise<SiteText | null> {
+    const { data, error } = await supabase
+      .from("site_texts")
+      .select("*")
+      .eq("key", key)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) return null;
+    return { key: data.key, valueJp: data.value_jp, valueKr: data.value_kr };
+  }
+
+  async upsertSiteText(key: string, input: { valueJp: string; valueKr: string }): Promise<SiteText> {
+    const { data, error } = await supabase
+      .from("site_texts")
+      .upsert(
+        { key, value_jp: input.valueJp, value_kr: input.valueKr, updated_at: new Date().toISOString() },
+        { onConflict: "key" }
+      )
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return { key: data.key, valueJp: data.value_jp, valueKr: data.value_kr };
   }
 }

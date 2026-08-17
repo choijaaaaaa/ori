@@ -6,6 +6,7 @@ import type {
   ParticipantNote,
   Application,
   ApplicationStatus,
+  SiteText,
 } from "./types";
 
 export interface DataRepository {
@@ -58,6 +59,9 @@ export interface DataRepository {
     eventId?: string;
   }): Promise<Application>;
   updateApplicationStatus(id: string, status: ApplicationStatus): Promise<Application>;
+
+  getSiteText(key: string): Promise<SiteText | null>;
+  upsertSiteText(key: string, input: { valueJp: string; valueKr: string }): Promise<SiteText>;
 }
 
 export const repository: DataRepository = new SupabaseRepository();

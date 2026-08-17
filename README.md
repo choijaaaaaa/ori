@@ -43,7 +43,7 @@ npm run dev
 - `/admin/photos` — 사진 갤러리 관리 (로컬 업로드)
 - `/admin/surveys` — 설문 응답 목록 (이름 검색)
 - `/admin/participants/[name]` — 참가자별 신청 이력 + 설문 이력 + 메모(CRM)
-- `/admin/settings` — 관리자 비밀번호 변경
+- `/admin/settings` — 관리자 비밀번호 변경 + 사이트 문구 편집(참가 신청 페이지 안내문 등, 일본어+한국어 둘 다 관리자가 직접 입력)
 
 ## 배포 (Vercel)
 
@@ -60,3 +60,4 @@ npm run dev
 
 - `src/lib/notify.ts`를 실제 이메일 서비스(Resend 등) 연동으로 교체
 - 필요 시 관리자 인증을 Supabase Auth로 전환(지금은 단일 비밀번호 해시 방식)
+- 사이트 문구(`site_texts` 테이블) 자동 번역 — 이메일과 마찬가지로 외부 번역 API 키가 필요해 보류. 지금은 관리자가 일본어/한국어를 각각 직접 입력.

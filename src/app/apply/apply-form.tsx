@@ -11,10 +11,14 @@ export default function ApplyForm({
   events,
   activeCountByEventId,
   initialEventId,
+  introJp,
+  introKr,
 }: {
   events: EventPost[];
   activeCountByEventId: Record<string, number>;
   initialEventId?: string;
+  introJp: string;
+  introKr: string;
 }) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
@@ -105,11 +109,11 @@ export default function ApplyForm({
             jp="参加申し込み"
             kr="참가 신청"
           />
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            日韓交流会への参加申し込みフォームです。お名前をご記入ください。
+          <p className="whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">
+            {introJp}
             <br />
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              일한교류회 참가 신청 폼입니다. 이름을 입력해주세요.
+            <span className="whitespace-pre-wrap text-xs text-zinc-500 dark:text-zinc-400">
+              {introKr}
             </span>
           </p>
         </div>
@@ -150,9 +154,11 @@ export default function ApplyForm({
           <div className="flex flex-col gap-1.5">
             <label htmlFor="name" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
               <span className="block">
-                お名前 <span className="text-red-500">*</span>
+                お名前またはニックネーム <span className="text-red-500">*</span>
               </span>
-              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">이름</span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                이름 또는 닉네임
+              </span>
             </label>
             <input
               id="name"
