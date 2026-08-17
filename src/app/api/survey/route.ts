@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { sendSurveyNotification } from "@/lib/notify";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { internalErrorResponse } from "@/lib/api-error";
 
 export async function POST(request: Request) {
   // 봇 스팸으로 설문 응답이 무한정 쌓이는 걸 막기 위한 최소한의 요청 제한.
@@ -34,11 +35,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const created = await repository.createSurveyResponse({
-    participantName,
-    contact: contact || undefined,
-    answers,
-  });
+  let created;
+  try {
+    created = await repository.createSurveyResponse({
+      participantName,
+      contact: contact || undefined,
+      answers,
+    });
+  } catch (error) {
+    console.error("설문 응답 저장 실패", error);
+    return internalErrorResponse("설문 제출 중 오류가 발생했습니다.");
+  }
 
   try {
     await sendSurveyNotification(created);

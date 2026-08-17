@@ -2,10 +2,16 @@
 import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
+import { internalErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
-  const items = await repository.listEvents();
-  return NextResponse.json(items);
+  try {
+    const items = await repository.listEvents();
+    return NextResponse.json(items);
+  } catch (error) {
+    console.error("이벤트 목록 조회 실패", error);
+    return internalErrorResponse("이벤트 목록을 불러오는 중 오류가 발생했습니다.");
+  }
 }
 
 export async function POST(request: Request) {
@@ -30,13 +36,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const created = await repository.createEvent({
-    title,
-    content,
-    eventDate: eventDate || undefined,
-    coverPhotoUrl: coverPhotoUrl || undefined,
-    venueInfo: venueInfo || undefined,
-  });
-
-  return NextResponse.json(created, { status: 201 });
+  try {
+    const created = await repository.createEvent({
+      title,
+      content,
+      eventDate: eventDate || undefined,
+      coverPhotoUrl: coverPhotoUrl || undefined,
+      venueInfo: venueInfo || undefined,
+    });
+    return NextResponse.json(created, { status: 201 });
+  } catch (error) {
+    console.error("이벤트 등록 실패", error);
+    return internalErrorResponse("이벤트 등록 중 오류가 발생했습니다.");
+  }
 }

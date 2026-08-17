@@ -4,6 +4,7 @@ import { repository } from "@/lib/repository";
 import { sendApplicationNotification } from "@/lib/notify";
 import { isAdminAuthenticated } from "@/lib/require-admin";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { internalErrorResponse } from "@/lib/api-error";
 
 export async function GET() {
   if (!(await isAdminAuthenticated())) {
@@ -12,8 +13,13 @@ export async function GET() {
       { status: 401 }
     );
   }
-  const items = await repository.listApplications();
-  return NextResponse.json(items);
+  try {
+    const items = await repository.listApplications();
+    return NextResponse.json(items);
+  } catch (error) {
+    console.error("신청 내역 조회 실패", error);
+    return internalErrorResponse("신청 내역을 불러오는 중 오류가 발생했습니다.");
+  }
 }
 
 export async function POST(request: Request) {
@@ -38,12 +44,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const created = await repository.createApplication({
-    name,
-    contact: contact || undefined,
-    message: message || undefined,
-    eventId: eventId || undefined,
-  });
+  let created;
+  try {
+    created = await repository.createApplication({
+      name,
+      contact: contact || undefined,
+      message: message || undefined,
+      eventId: eventId || undefined,
+    });
+  } catch (error) {
+    console.error("신청 저장 실패", error);
+    return internalErrorResponse("신청 접수 중 오류가 발생했습니다.");
+  }
 
   try {
     await sendApplicationNotification(created);

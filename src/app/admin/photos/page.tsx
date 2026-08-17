@@ -4,7 +4,7 @@ import type { Photo } from "@/lib/types";
 import PhotoForm from "./photo-form";
 import { Bilingual } from "@/components/bilingual";
 
-// 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(mock 단계 fs 읽기 특성상 필수).
+// 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
 export const dynamic = "force-dynamic";
 
 async function loadPhotos(): Promise<{ ok: true; items: Photo[] } | { ok: false }> {

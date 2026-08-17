@@ -4,7 +4,7 @@ import { repository } from "@/lib/repository";
 import type { SurveyResponse } from "@/lib/types";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 
-// 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(mock 단계 fs 읽기 특성상 필수).
+// 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
 export const dynamic = "force-dynamic";
 
 async function loadResponses(): Promise<
@@ -74,7 +74,7 @@ export default async function AdminSurveysPage() {
                 </Link>
                 <time dateTime={r.submittedAt} className="text-xs text-zinc-400">
                   <BilingualInline jp="送信日" kr="제출일" />:{" "}
-                  {new Date(r.submittedAt).toLocaleString("ko-KR")}
+                  {new Date(r.submittedAt).toLocaleString("ja-JP")}
                 </time>
               </div>
               {r.contact && (

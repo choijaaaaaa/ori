@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { changeAdminPassword } from "@/lib/auth";
 import { isAdminAuthenticated } from "@/lib/require-admin";
+import { internalErrorResponse } from "@/lib/api-error";
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) {
@@ -28,7 +29,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const ok = await changeAdminPassword(currentPassword, newPassword);
+  let ok: boolean;
+  try {
+    ok = await changeAdminPassword(currentPassword, newPassword);
+  } catch (error) {
+    console.error("관리자 비밀번호 변경 실패", error);
+    return internalErrorResponse("비밀번호 변경 중 오류가 발생했습니다.");
+  }
   if (!ok) {
     return NextResponse.json(
       { error: { code: "INVALID_PASSWORD", message: "현재 비밀번호가 올바르지 않습니다." } },

@@ -5,7 +5,7 @@ import { repository } from "@/lib/repository";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
 
-// 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(mock 단계 fs 읽기 특성상 필수).
+// 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
 export const dynamic = "force-dynamic";
 
 export default async function EventDetailPage({
@@ -14,7 +14,27 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = await repository.getEvent(id);
+
+  let event;
+  try {
+    event = await repository.getEvent(id);
+  } catch (error) {
+    console.error("이벤트 상세 로드 실패", error);
+    return (
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-amber-50 px-6 py-16 text-center dark:bg-zinc-950">
+        <DecorativeBackground />
+        <p
+          role="alert"
+          className="relative z-10 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+        >
+          <BilingualInline
+            jp="データの読み込み中に問題が発生しました。しばらくしてから再度お試しください。"
+            kr="데이터를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+          />
+        </p>
+      </div>
+    );
+  }
 
   if (!event) {
     notFound();

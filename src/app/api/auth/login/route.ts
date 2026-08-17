@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyAdminPassword } from "@/lib/auth";
 import { ADMIN_COOKIE, getSessionTokenValue } from "@/lib/session";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { internalErrorResponse } from "@/lib/api-error";
 
 export async function POST(request: Request) {
   // 무차별 대입(brute force) 로그인 시도를 막기 위한 최소한의 요청 제한.
@@ -22,7 +23,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const ok = await verifyAdminPassword(password);
+  let ok: boolean;
+  try {
+    ok = await verifyAdminPassword(password);
+  } catch (error) {
+    console.error("관리자 인증 확인 실패", error);
+    return internalErrorResponse("로그인 처리 중 오류가 발생했습니다.");
+  }
   if (!ok) {
     return NextResponse.json(
       { error: { code: "INVALID_PASSWORD", message: "비밀번호가 올바르지 않습니다." } },

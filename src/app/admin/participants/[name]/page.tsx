@@ -81,7 +81,7 @@ export default async function ParticipantDetailPage({
                         </p>
                       )}
                       <time dateTime={r.submittedAt} className="text-xs text-zinc-400">
-                        {new Date(r.submittedAt).toLocaleString("ko-KR")}
+                        {new Date(r.submittedAt).toLocaleString("ja-JP")}
                       </time>
                     </div>
                     <dl className="mt-2 flex flex-col gap-1">
@@ -131,7 +131,7 @@ export default async function ParticipantDetailPage({
                       </div>
                     )}
                     <time dateTime={n.createdAt} className="mt-2 block text-xs text-zinc-400">
-                      {new Date(n.createdAt).toLocaleString("ko-KR")}
+                      {new Date(n.createdAt).toLocaleString("ja-JP")}
                     </time>
                   </li>
                 ))}

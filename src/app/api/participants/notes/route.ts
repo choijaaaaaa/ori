@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
+import { internalErrorResponse } from "@/lib/api-error";
 
 export async function GET(request: Request) {
   const isAdmin = await isAdminAuthenticated();
@@ -22,8 +23,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const items = await repository.listNotesByParticipant(name);
-  return NextResponse.json(items);
+  try {
+    const items = await repository.listNotesByParticipant(name);
+    return NextResponse.json(items);
+  } catch (error) {
+    console.error("참가자 메모 조회 실패", error);
+    return internalErrorResponse("메모를 불러오는 중 오류가 발생했습니다.");
+  }
 }
 
 export async function POST(request: Request) {
@@ -50,6 +56,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const created = await repository.addNote({ participantName, note, tags });
-  return NextResponse.json(created, { status: 201 });
+  try {
+    const created = await repository.addNote({ participantName, note, tags });
+    return NextResponse.json(created, { status: 201 });
+  } catch (error) {
+    console.error("참가자 메모 등록 실패", error);
+    return internalErrorResponse("메모 등록 중 오류가 발생했습니다.");
+  }
 }
