@@ -71,7 +71,8 @@ export async function POST(request: Request) {
         );
       }
       if (field.type === "checkbox_group" && field.requireAll) {
-        const selectedCount = value.split(" / ").filter((v) => v.trim()).length;
+        // 클라이언트(apply-form.tsx)의 CHECKBOX_GROUP_SEPARATOR와 반드시 일치해야 한다.
+        const selectedCount = value.split(" | ").filter((v) => v.trim()).length;
         if (selectedCount < field.options.length) {
           return NextResponse.json(
             {

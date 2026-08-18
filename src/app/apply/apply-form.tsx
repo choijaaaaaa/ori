@@ -6,11 +6,14 @@ import { useState, type FormEvent } from "react";
 import QRCode from "react-qr-code";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
+import { AdminInlineLink } from "@/components/admin-inline-link";
 import type { ApplyFormField, EventPost } from "@/lib/types";
 
-// checkbox_group 응답을 이 구분자로 join한다 — /api/applications의 requireAll 개수 검증(split(" / "))과
-// 반드시 일치해야 하므로 임의로 바꾸면 안 된다.
-const CHECKBOX_GROUP_SEPARATOR = " / ";
+// checkbox_group 응답을 이 구분자로 join한다 — /api/applications의 requireAll 개수 검증과
+// 반드시 일치해야 하므로 임의로 바꾸면 안 된다. " / "는 옵션 텍스트 자체에 흔히 등장해서
+// (예: "한글을 읽을 수 있음 / 아는 단어...") 왕복 인코딩이 깨지는 버그가 있었다 — 옵션
+// 텍스트에 나타날 일이 거의 없는 " | "로 교체.
+const CHECKBOX_GROUP_SEPARATOR = " | ";
 
 function isFieldSatisfied(field: ApplyFormField, values: Record<string, string>): boolean {
   if (field.type === "image") return true; // 안내용 블록, 응답 없음
@@ -56,6 +59,7 @@ export default function ApplyForm({
   introJp,
   introKr,
   fields,
+  isAdmin,
 }: {
   events: EventPost[];
   activeCountByEventId: Record<string, number>;
@@ -63,6 +67,7 @@ export default function ApplyForm({
   introJp: string;
   introKr: string;
   fields: ApplyFormField[];
+  isAdmin: boolean;
 }) {
   const [name, setName] = useState("");
   const [eventId, setEventId] = useState(
@@ -370,6 +375,11 @@ export default function ApplyForm({
     <div className="relative flex flex-1 flex-col overflow-hidden bg-amber-50 px-6 py-16 dark:bg-zinc-950">
       <DecorativeBackground />
       <main className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-8">
+        {isAdmin && (
+          <div className="flex justify-center">
+            <AdminInlineLink href="/admin/apply-form" jp="項目を編集" kr="항목 편집" />
+          </div>
+        )}
         <div className="flex flex-col gap-2 text-center">
           <Bilingual
             as="h1"

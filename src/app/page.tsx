@@ -2,8 +2,10 @@
 // 오시는 길은 고정 장소가 없어 회차마다 달라지므로 여기서는 안 보여주고, 이벤트별 상세(/events/[id])에서 안내한다.
 import Link from "next/link";
 import { repository } from "@/lib/repository";
+import { isAdminAuthenticated } from "@/lib/require-admin";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
+import { AdminInlineLink } from "@/components/admin-inline-link";
 import type { EventPost, Photo } from "@/lib/types";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
@@ -26,7 +28,7 @@ async function loadHomeData(): Promise<
 }
 
 export default async function Home() {
-  const data = await loadHomeData();
+  const [data, isAdmin] = await Promise.all([loadHomeData(), isAdminAuthenticated()]);
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-amber-50 dark:bg-zinc-950">
@@ -99,11 +101,16 @@ export default async function Home() {
         {data.ok && (
           <>
             <section aria-labelledby="events-heading" className="flex flex-col gap-4">
-              <Bilingual
-                as="h2"
-                jp={<span id="events-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">イベント一覧</span>}
-                kr="모임 일정"
-              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Bilingual
+                  as="h2"
+                  jp={<span id="events-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">イベント一覧</span>}
+                  kr="모임 일정"
+                />
+                {isAdmin && (
+                  <AdminInlineLink href="/admin/events" jp="+ イベントを追加" kr="+ 모임 추가" />
+                )}
+              </div>
               {data.events.length === 0 ? (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
                   <BilingualInline jp="予定されているイベントはまだありません。" kr="예정된 모임이 아직 없습니다." />

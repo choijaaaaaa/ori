@@ -1,5 +1,6 @@
 // 참가 신청 페이지 — 이벤트 목록을 불러와 폼에 전달한다 (쿼리의 eventId가 있으면 미리 선택)
 import { repository } from "@/lib/repository";
+import { isAdminAuthenticated } from "@/lib/require-admin";
 import { APPLY_INTRO_KEY, APPLY_INTRO_DEFAULT } from "@/lib/site-text-defaults";
 import ApplyForm from "./apply-form";
 
@@ -15,6 +16,7 @@ export default async function ApplyPage({
   const events = await repository.listEvents().catch(() => []);
   const introText = await repository.getSiteText(APPLY_INTRO_KEY).catch(() => null);
   const fields = await repository.listApplyFormFields().catch(() => []);
+  const isAdmin = await isAdminAuthenticated();
 
   // 정원/마감 여부를 옵션에 표시하기 위해 회차별 활성 신청자 수를 함께 가져온다.
   // 개별 조회가 실패해도 폼 전체가 깨지면 안 되므로 실패한 회차는 0명으로 처리한다.
@@ -33,6 +35,7 @@ export default async function ApplyPage({
       introJp={introText?.valueJp || APPLY_INTRO_DEFAULT.jp}
       introKr={introText?.valueKr || APPLY_INTRO_DEFAULT.kr}
       fields={fields}
+      isAdmin={isAdmin}
     />
   );
 }
