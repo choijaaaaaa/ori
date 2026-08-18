@@ -89,38 +89,52 @@ export default function ApplyForm({
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [isAddingField, setIsAddingField] = useState(false);
   const [dragFieldId, setDragFieldId] = useState<string | null>(null);
+  const [overFieldId, setOverFieldId] = useState<string | null>(null);
   const [isSavingFieldOrder, setIsSavingFieldOrder] = useState(false);
   const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
   const [adminError, setAdminError] = useState<string | null>(null);
 
   function handleFieldDragStart(id: string) {
     setDragFieldId(id);
+    setOverFieldId(id);
   }
 
+  // dragover는 같은 요소 위에 머무는 동안에도 계속 반복 발생한다. 여기서 배열을 매번
+  // 재배열하면 드래그 도중 DOM이 계속 움직여 커서 아래 요소가 바뀌고, 그게 다시 dragover를
+  // 유발해 무한히 재배열되는 피드백 루프가 생긴다 — 그래서 hover 대상만 추적하고, 실제 배열
+  // 재배열은 drop 시점에 한 번만 한다.
   function handleFieldDragOver(event: DragEvent<HTMLDivElement>, targetId: string) {
     event.preventDefault();
     if (!dragFieldId || dragFieldId === targetId) return;
-    setSortedFields((prev) => {
-      const fromIndex = prev.findIndex((item) => item.id === dragFieldId);
-      const toIndex = prev.findIndex((item) => item.id === targetId);
-      if (fromIndex === -1 || toIndex === -1) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
+    if (overFieldId !== targetId) setOverFieldId(targetId);
   }
 
   async function handleFieldDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
+    const fromId = dragFieldId;
+    const toId = overFieldId;
     setDragFieldId(null);
+    setOverFieldId(null);
+    if (!fromId || !toId || fromId === toId) return;
+
+    const reordered = (() => {
+      const fromIndex = sortedFields.findIndex((item) => item.id === fromId);
+      const toIndex = sortedFields.findIndex((item) => item.id === toId);
+      if (fromIndex === -1 || toIndex === -1) return sortedFields;
+      const next = [...sortedFields];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    })();
+    setSortedFields(reordered);
+
     setAdminError(null);
     setIsSavingFieldOrder(true);
     try {
       const res = await fetch("/api/apply-form-fields/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds: sortedFields.map((f) => f.id) }),
+        body: JSON.stringify({ orderedIds: reordered.map((f) => f.id) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -554,11 +568,16 @@ export default function ApplyForm({
                 onDragStart={() => handleFieldDragStart(field.id)}
                 onDragOver={(e) => handleFieldDragOver(e, field.id)}
                 onDrop={handleFieldDrop}
-                onDragEnd={() => setDragFieldId(null)}
+                onDragEnd={() => {
+                  setDragFieldId(null);
+                  setOverFieldId(null);
+                }}
                 className={`flex flex-col gap-1.5 rounded-lg border-2 border-dashed p-2 transition-opacity ${
                   dragFieldId === field.id
-                    ? "border-amber-400 opacity-50"
-                    : "border-transparent hover:border-amber-200"
+                    ? "border-transparent opacity-50"
+                    : overFieldId === field.id
+                      ? "border-amber-400"
+                      : "border-transparent hover:border-amber-200"
                 }`}
               >
                 <div className="flex flex-wrap items-center gap-1.5 text-xs">

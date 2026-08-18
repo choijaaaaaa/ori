@@ -13,6 +13,7 @@ export default function FieldList({ fields }: { fields: ApplyFormField[] }) {
   const [items, setItems] = useState(fields);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -24,33 +25,46 @@ export default function FieldList({ fields }: { fields: ApplyFormField[] }) {
 
   function handleDragStart(id: string) {
     setDragId(id);
+    setOverId(id);
   }
 
-  // 드래그 중인 카드가 다른 카드 위를 지날 때마다 로컬 배열을 즉시 재배열해 부드러운 드래그 경험을 준다.
+  // dragover는 같은 요소 위에 머무는 동안에도 계속 반복 발생한다. 여기서 배열을 매번
+  // 재배열하면 드래그 도중 DOM이 계속 움직여 커서 아래 요소가 바뀌고, 그게 다시 dragover를
+  // 유발해 무한히 재배열되는 피드백 루프가 생긴다(실제로 이 버그로 순서가 계속 이상하게
+  // 바뀌는 문제가 있었다) — 그래서 hover 대상만 추적하고, 실제 배열 재배열은 drop 시점에
+  // 한 번만 한다.
   function handleDragOver(event: DragEvent<HTMLLIElement>, targetId: string) {
     event.preventDefault();
     if (!dragId || dragId === targetId) return;
-    setItems((prev) => {
-      const fromIndex = prev.findIndex((item) => item.id === dragId);
-      const toIndex = prev.findIndex((item) => item.id === targetId);
-      if (fromIndex === -1 || toIndex === -1) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
+    if (overId !== targetId) setOverId(targetId);
   }
 
   async function handleDrop(event: DragEvent<HTMLLIElement>) {
     event.preventDefault();
+    const fromId = dragId;
+    const toId = overId;
     setDragId(null);
+    setOverId(null);
+    if (!fromId || !toId || fromId === toId) return;
+
+    const reordered = (() => {
+      const fromIndex = items.findIndex((item) => item.id === fromId);
+      const toIndex = items.findIndex((item) => item.id === toId);
+      if (fromIndex === -1 || toIndex === -1) return items;
+      const next = [...items];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    })();
+    setItems(reordered);
+
     setActionError(null);
     setIsSavingOrder(true);
     try {
       const res = await fetch("/api/apply-form-fields/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds: items.map((item) => item.id) }),
+        body: JSON.stringify({ orderedIds: reordered.map((item) => item.id) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -119,9 +133,16 @@ export default function FieldList({ fields }: { fields: ApplyFormField[] }) {
               onDragStart={() => handleDragStart(item.id)}
               onDragOver={(e) => handleDragOver(e, item.id)}
               onDrop={handleDrop}
-              onDragEnd={() => setDragId(null)}
-              className={`flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 transition-opacity dark:border-zinc-800 dark:bg-zinc-900 ${
-                dragId === item.id ? "opacity-50" : ""
+              onDragEnd={() => {
+                setDragId(null);
+                setOverId(null);
+              }}
+              className={`flex flex-col gap-2 rounded-xl border p-4 transition-opacity dark:bg-zinc-900 ${
+                dragId === item.id
+                  ? "opacity-50 border-zinc-200 dark:border-zinc-800"
+                  : overId === item.id
+                    ? "border-amber-400 border-dashed dark:border-amber-600"
+                    : "border-zinc-200 bg-white dark:border-zinc-800"
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">

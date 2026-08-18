@@ -33,37 +33,51 @@ export default function HomeEventsSection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
 
   function handleDragStart(id: string) {
     setDragId(id);
+    setOverId(id);
   }
 
+  // dragover는 같은 요소 위에 머무는 동안에도 계속 반복 발생한다. 여기서 배열을 매번
+  // 재배열하면 드래그 도중 DOM이 계속 움직여 커서 아래 요소가 바뀌고, 그게 다시 dragover를
+  // 유발해 무한히 재배열되는 피드백 루프가 생긴다 — 그래서 hover 대상만 추적하고, 실제 배열
+  // 재배열은 drop 시점에 한 번만 한다.
   function handleDragOver(event: DragEvent<HTMLLIElement>, targetId: string) {
     event.preventDefault();
     if (!dragId || dragId === targetId) return;
-    setSortedEvents((prev) => {
-      const fromIndex = prev.findIndex((item) => item.id === dragId);
-      const toIndex = prev.findIndex((item) => item.id === targetId);
-      if (fromIndex === -1 || toIndex === -1) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
+    if (overId !== targetId) setOverId(targetId);
   }
 
   async function handleDrop(event: DragEvent<HTMLLIElement>) {
     event.preventDefault();
+    const fromId = dragId;
+    const toId = overId;
     setDragId(null);
+    setOverId(null);
+    if (!fromId || !toId || fromId === toId) return;
+
+    const reordered = (() => {
+      const fromIndex = sortedEvents.findIndex((item) => item.id === fromId);
+      const toIndex = sortedEvents.findIndex((item) => item.id === toId);
+      if (fromIndex === -1 || toIndex === -1) return sortedEvents;
+      const next = [...sortedEvents];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    })();
+    setSortedEvents(reordered);
+
     setAdminError(null);
     setIsSavingOrder(true);
     try {
       const res = await fetch("/api/events/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds: sortedEvents.map((e) => e.id) }),
+        body: JSON.stringify({ orderedIds: reordered.map((e) => e.id) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -167,9 +181,16 @@ export default function HomeEventsSection({
                 onDragStart={() => handleDragStart(item.id)}
                 onDragOver={(e) => handleDragOver(e, item.id)}
                 onDrop={handleDrop}
-                onDragEnd={() => setDragId(null)}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setOverId(null);
+                }}
                 className={`flex flex-col gap-1.5 rounded-xl border-2 border-dashed p-2 transition-opacity ${
-                  dragId === item.id ? "border-amber-400 opacity-50" : "border-transparent hover:border-amber-200"
+                  dragId === item.id
+                    ? "border-transparent opacity-50"
+                    : overId === item.id
+                      ? "border-amber-400"
+                      : "border-transparent hover:border-amber-200"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">

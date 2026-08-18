@@ -100,37 +100,51 @@ export default function HomePhotosSection({
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const [dragPhotoId, setDragPhotoId] = useState<string | null>(null);
+  const [overPhotoId, setOverPhotoId] = useState<string | null>(null);
   const [isSavingPhotoOrder, setIsSavingPhotoOrder] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
 
   function handlePhotoDragStart(id: string) {
     setDragPhotoId(id);
+    setOverPhotoId(id);
   }
 
+  // dragover는 같은 요소 위에 머무는 동안에도 계속 반복 발생한다. 여기서 배열을 매번
+  // 재배열하면 드래그 도중 DOM이 계속 움직여 커서 아래 요소가 바뀌고, 그게 다시 dragover를
+  // 유발해 무한히 재배열되는 피드백 루프가 생긴다 — 그래서 hover 대상만 추적하고, 실제 배열
+  // 재배열은 drop 시점에 한 번만 한다.
   function handlePhotoDragOver(event: DragEvent<HTMLLIElement>, targetId: string) {
     event.preventDefault();
     if (!dragPhotoId || dragPhotoId === targetId) return;
-    setSortedPhotos((prev) => {
-      const fromIndex = prev.findIndex((item) => item.id === dragPhotoId);
-      const toIndex = prev.findIndex((item) => item.id === targetId);
-      if (fromIndex === -1 || toIndex === -1) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
+    if (overPhotoId !== targetId) setOverPhotoId(targetId);
   }
 
   async function handlePhotoDrop(event: DragEvent<HTMLLIElement>) {
     event.preventDefault();
+    const fromId = dragPhotoId;
+    const toId = overPhotoId;
     setDragPhotoId(null);
+    setOverPhotoId(null);
+    if (!fromId || !toId || fromId === toId) return;
+
+    const reordered = (() => {
+      const fromIndex = sortedPhotos.findIndex((item) => item.id === fromId);
+      const toIndex = sortedPhotos.findIndex((item) => item.id === toId);
+      if (fromIndex === -1 || toIndex === -1) return sortedPhotos;
+      const next = [...sortedPhotos];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    })();
+    setSortedPhotos(reordered);
+
     setAdminError(null);
     setIsSavingPhotoOrder(true);
     try {
       const res = await fetch("/api/photos/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds: sortedPhotos.map((p) => p.id) }),
+        body: JSON.stringify({ orderedIds: reordered.map((p) => p.id) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -197,11 +211,16 @@ export default function HomePhotosSection({
                 onDragStart={() => handlePhotoDragStart(photo.id)}
                 onDragOver={(e) => handlePhotoDragOver(e, photo.id)}
                 onDrop={handlePhotoDrop}
-                onDragEnd={() => setDragPhotoId(null)}
+                onDragEnd={() => {
+                  setDragPhotoId(null);
+                  setOverPhotoId(null);
+                }}
                 className={`flex flex-col gap-1.5 rounded-lg border-2 border-dashed p-2 transition-opacity ${
                   dragPhotoId === photo.id
-                    ? "border-amber-400 opacity-50"
-                    : "border-transparent hover:border-amber-200"
+                    ? "border-transparent opacity-50"
+                    : overPhotoId === photo.id
+                      ? "border-amber-400"
+                      : "border-transparent hover:border-amber-200"
                 }`}
               >
                 <img
