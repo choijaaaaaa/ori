@@ -7,6 +7,7 @@ create table if not exists events (
   venue_info text,
   capacity integer,
   closed boolean not null default false,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -14,6 +15,7 @@ create table if not exists photos (
   id uuid primary key default gen_random_uuid(),
   url text not null,
   caption text,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 

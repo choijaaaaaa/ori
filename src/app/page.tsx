@@ -1,11 +1,14 @@
 // 공개 홈 화면 — 서비스 소개, 이벤트(회차) 카드, 사진 갤러리
 // 오시는 길은 고정 장소가 없어 회차마다 달라지므로 여기서는 안 보여주고, 이벤트별 상세(/events/[id])에서 안내한다.
+// 이벤트/사진 목록은 관리자 로그인 시 그 자리에서 바로 추가·수정·삭제·드래그 순서변경할 수 있다
+// (HomeEventsSection/HomePhotosSection이 담당 — apply-form.tsx의 인라인 편집 패턴과 동일).
 import Link from "next/link";
 import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
-import { AdminInlineLink } from "@/components/admin-inline-link";
+import HomeEventsSection from "./home-events-section";
+import HomePhotosSection from "./home-photos-section";
 import type { EventPost, Photo } from "@/lib/types";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
@@ -29,6 +32,11 @@ async function loadHomeData(): Promise<
 
 export default async function Home() {
   const [data, isAdmin] = await Promise.all([loadHomeData(), isAdminAuthenticated()]);
+  // 장소가 매번 바뀌어 매 회차 새로 입력해야 하니, 가장 최근에 등록한 안내문을 불러와 빠르게 고쳐 쓸 수 있게 한다.
+  const recentVenueInfo = data.ok
+    ? [...data.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).find((e) => e.venueInfo)
+        ?.venueInfo
+    : undefined;
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-amber-50 dark:bg-zinc-950">
@@ -100,89 +108,13 @@ export default async function Home() {
 
         {data.ok && (
           <>
-            <section aria-labelledby="events-heading" className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Bilingual
-                  as="h2"
-                  jp={<span id="events-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">イベント一覧</span>}
-                  kr="모임 일정"
-                />
-                {isAdmin && (
-                  <AdminInlineLink href="/admin/events" jp="+ イベントを追加" kr="+ 모임 추가" />
-                )}
-              </div>
-              {data.events.length === 0 ? (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  <BilingualInline jp="予定されているイベントはまだありません。" kr="예정된 모임이 아직 없습니다." />
-                </p>
-              ) : (
-                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {data.events.map((item) => (
-                    <li key={item.id}>
-                      <Link
-                        href={`/events/${item.id}`}
-                        className="flex flex-col overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
-                      >
-                        {item.coverPhotoUrl ? (
-                          <img
-                            src={item.coverPhotoUrl}
-                            alt={item.title}
-                            className="aspect-video w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex aspect-video w-full items-center justify-center bg-amber-100 text-3xl dark:bg-zinc-800">
-                            🦆
-                          </div>
-                        )}
-                        <div className="flex flex-col gap-1 px-5 py-4">
-                          {item.eventDate && (
-                            <span className="w-fit rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                              {new Date(item.eventDate).toLocaleDateString("ja-JP")}
-                            </span>
-                          )}
-                          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-                            {item.title}
-                          </h3>
-                          <p className="line-clamp-2 whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-300">
-                            {item.content}
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <section aria-labelledby="gallery-heading" className="flex flex-col gap-4">
-              <Bilingual
-                as="h2"
-                jp={<span id="gallery-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">フォトギャラリー</span>}
-                kr="사진 갤러리"
-              />
-              {data.photos.length === 0 ? (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  <BilingualInline jp="写真はまだありません。" kr="등록된 사진이 없습니다." />
-                </p>
-              ) : (
-                <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  {data.photos.map((photo) => (
-                    <li key={photo.id} className="flex flex-col gap-1">
-                      <img
-                        src={photo.url}
-                        alt={photo.caption ?? "日韓交流会の活動写真 / 일한교류회 활동 사진"}
-                        className="aspect-square w-full rounded-lg object-cover"
-                      />
-                      {photo.caption && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {photo.caption}
-                        </p>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <HomeEventsSection
+              events={data.events}
+              photos={data.photos}
+              isAdmin={isAdmin}
+              recentVenueInfo={recentVenueInfo}
+            />
+            <HomePhotosSection photos={data.photos} isAdmin={isAdmin} />
           </>
         )}
       </main>

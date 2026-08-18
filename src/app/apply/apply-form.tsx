@@ -2,11 +2,12 @@
 
 // 참가 신청 폼 — 신청 접수 후 QR 코드를 보여주고, QR을 스캔하면 설문 페이지로 이동한다.
 // 이벤트 선택/이름은 고정 항목이고, 그 외 문항은 관리자가 등록한 ApplyFormField[]를 동적으로 렌더링한다.
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type DragEvent, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
-import { AdminInlineLink } from "@/components/admin-inline-link";
+import FieldForm, { getTypeLabel } from "@/app/admin/apply-form/field-form";
 import type { ApplyFormField, EventPost } from "@/lib/types";
 
 // checkbox_group 응답을 이 구분자로 join한다 — /api/applications의 requireAll 개수 검증과
@@ -69,6 +70,7 @@ export default function ApplyForm({
   fields: ApplyFormField[];
   isAdmin: boolean;
 }) {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [eventId, setEventId] = useState(
     initialEventId && events.some((e) => e.id === initialEventId) ? initialEventId : ""
@@ -77,7 +79,83 @@ export default function ApplyForm({
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const sortedFields = [...fields].sort((a, b) => a.sortOrder - b.sortOrder);
+  // 관리자 모드 전용 상태 — 항목을 그 자리에서 바로 추가/수정/삭제/드래그 순서변경한다.
+  const [sortedFields, setSortedFields] = useState(() =>
+    [...fields].sort((a, b) => a.sortOrder - b.sortOrder)
+  );
+  useEffect(() => {
+    setSortedFields([...fields].sort((a, b) => a.sortOrder - b.sortOrder));
+  }, [fields]);
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [isAddingField, setIsAddingField] = useState(false);
+  const [dragFieldId, setDragFieldId] = useState<string | null>(null);
+  const [isSavingFieldOrder, setIsSavingFieldOrder] = useState(false);
+  const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
+  const [adminError, setAdminError] = useState<string | null>(null);
+
+  function handleFieldDragStart(id: string) {
+    setDragFieldId(id);
+  }
+
+  function handleFieldDragOver(event: DragEvent<HTMLDivElement>, targetId: string) {
+    event.preventDefault();
+    if (!dragFieldId || dragFieldId === targetId) return;
+    setSortedFields((prev) => {
+      const fromIndex = prev.findIndex((item) => item.id === dragFieldId);
+      const toIndex = prev.findIndex((item) => item.id === targetId);
+      if (fromIndex === -1 || toIndex === -1) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }
+
+  async function handleFieldDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragFieldId(null);
+    setAdminError(null);
+    setIsSavingFieldOrder(true);
+    try {
+      const res = await fetch("/api/apply-form-fields/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: sortedFields.map((f) => f.id) }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message ?? "순서 변경에 실패했습니다.");
+      }
+      router.refresh();
+    } catch (err) {
+      setAdminError(err instanceof Error ? err.message : "네트워크 오류로 순서 변경에 실패했습니다.");
+      router.refresh();
+    } finally {
+      setIsSavingFieldOrder(false);
+    }
+  }
+
+  async function handleDeleteField(id: string) {
+    const confirmed = window.confirm(
+      "本当に削除しますか？この操作は元に戻せません。\n정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+    );
+    if (!confirmed) return;
+    setAdminError(null);
+    setDeletingFieldId(id);
+    try {
+      const res = await fetch(`/api/apply-form-fields/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message ?? "항목 삭제에 실패했습니다.");
+      }
+      router.refresh();
+    } catch (err) {
+      setAdminError(err instanceof Error ? err.message : "네트워크 오류로 항목 삭제에 실패했습니다.");
+    } finally {
+      setDeletingFieldId(null);
+    }
+  }
+
   const allFieldsSatisfied = sortedFields.every((field) => isFieldSatisfied(field, values));
 
   function setTextValue(fieldKey: string, value: string) {
@@ -376,8 +454,17 @@ export default function ApplyForm({
       <DecorativeBackground />
       <main className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-8">
         {isAdmin && (
-          <div className="flex justify-center">
-            <AdminInlineLink href="/admin/apply-form" jp="項目を編集" kr="항목 편집" />
+          <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-4 py-2.5 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
+            <BilingualInline
+              jp="管理者モード：項目をドラッグして並び替え、編集・削除・追加ができます。"
+              kr="관리자 모드: 항목을 드래그해서 순서를 바꾸고, 편집·삭제·추가할 수 있습니다."
+            />
+            {adminError && <p className="mt-1 text-red-600 dark:text-red-400">{adminError}</p>}
+            {isSavingFieldOrder && (
+              <p className="mt-1 opacity-80">
+                <BilingualInline jp="並び順を保存中..." kr="순서 저장 중..." />
+              </p>
+            )}
           </div>
         )}
         <div className="flex flex-col gap-2 text-center">
@@ -451,7 +538,73 @@ export default function ApplyForm({
             />
           </div>
 
-          {sortedFields.map((field) => renderField(field))}
+          {sortedFields.map((field) => {
+            if (isAdmin && editingFieldId === field.id) {
+              return (
+                <FieldForm key={field.id} editingField={field} onDone={() => setEditingFieldId(null)} />
+              );
+            }
+            if (!isAdmin) return renderField(field);
+
+            const typeLabel = getTypeLabel(field.type);
+            return (
+              <div
+                key={field.id}
+                draggable
+                onDragStart={() => handleFieldDragStart(field.id)}
+                onDragOver={(e) => handleFieldDragOver(e, field.id)}
+                onDrop={handleFieldDrop}
+                onDragEnd={() => setDragFieldId(null)}
+                className={`flex flex-col gap-1.5 rounded-lg border-2 border-dashed p-2 transition-opacity ${
+                  dragFieldId === field.id
+                    ? "border-amber-400 opacity-50"
+                    : "border-transparent hover:border-amber-200"
+                }`}
+              >
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span aria-hidden className="cursor-grab select-none text-zinc-400">
+                    ⠿
+                  </span>
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    <BilingualInline jp={typeLabel.jp} kr={typeLabel.kr} />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditingFieldId(field.id)}
+                    className="rounded-full border border-zinc-300 px-2 py-0.5 font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    <BilingualInline jp="編集" kr="수정" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteField(field.id)}
+                    disabled={deletingFieldId === field.id}
+                    className="rounded-full border border-red-300 px-2 py-0.5 font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950"
+                  >
+                    {deletingFieldId === field.id ? (
+                      <BilingualInline jp="削除中..." kr="삭제 중..." />
+                    ) : (
+                      <BilingualInline jp="削除" kr="삭제" />
+                    )}
+                  </button>
+                </div>
+                {renderField(field)}
+              </div>
+            );
+          })}
+
+          {isAdmin &&
+            (isAddingField ? (
+              <FieldForm onDone={() => setIsAddingField(false)} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAddingField(true)}
+                className="w-fit rounded-full border border-amber-300 px-4 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+              >
+                <BilingualInline jp="+ 項目を追加" kr="+ 항목 추가" />
+              </button>
+            ))}
 
           {status === "error" && (
             <p

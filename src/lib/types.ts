@@ -8,6 +8,7 @@ export interface EventPost {
   venueInfo?: string; // 해당 회차 오시는 길 (선택, 없으면 홈의 기본 안내를 따른다)
   capacity?: number; // 정원 (선택, 없으면 무제한)
   closed: boolean; // 관리자가 수동으로 마감했는지
+  sortOrder: number; // 홈 화면 노출 순서 (관리자가 드래그로 직접 조정)
   createdAt: string;
 }
 
@@ -15,6 +16,7 @@ export interface Photo {
   id: string;
   url: string;
   caption?: string;
+  sortOrder: number; // 갤러리 노출 순서 (관리자가 드래그로 직접 조정)
   createdAt: string;
 }
 

@@ -23,6 +23,7 @@ function mapEvent(row: {
   venue_info: string | null;
   capacity: number | null;
   closed: boolean;
+  sort_order: number;
   created_at: string;
 }): EventPost {
   return {
@@ -34,12 +35,25 @@ function mapEvent(row: {
     venueInfo: row.venue_info ?? undefined,
     capacity: row.capacity ?? undefined,
     closed: row.closed,
+    sortOrder: row.sort_order,
     createdAt: row.created_at,
   };
 }
 
-function mapPhoto(row: { id: string; url: string; caption: string | null; created_at: string }): Photo {
-  return { id: row.id, url: row.url, caption: row.caption ?? undefined, createdAt: row.created_at };
+function mapPhoto(row: {
+  id: string;
+  url: string;
+  caption: string | null;
+  sort_order: number;
+  created_at: string;
+}): Photo {
+  return {
+    id: row.id,
+    url: row.url,
+    caption: row.caption ?? undefined,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+  };
 }
 
 function mapSurveyResponse(row: {
@@ -130,27 +144,15 @@ function mapApplyFormField(row: {
   };
 }
 
-// 홈 화면 이벤트 카드는 "다가오는 순"으로 보여준다: 오늘 이후 예정 이벤트를 날짜 오름차순으로
-// 먼저 보여주고, 날짜 미지정 이벤트, 그다음 지난 이벤트(최근순)를 아래에 붙인다.
-function sortEventsUpcomingFirst(events: EventPost[]): EventPost[] {
-  const today = new Date().toISOString().slice(0, 10);
-  const upcoming = events
-    .filter((e) => e.eventDate && e.eventDate >= today)
-    .sort((a, b) => a.eventDate!.localeCompare(b.eventDate!));
-  const undated = events
-    .filter((e) => !e.eventDate)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const past = events
-    .filter((e) => e.eventDate && e.eventDate < today)
-    .sort((a, b) => b.eventDate!.localeCompare(a.eventDate!));
-  return [...upcoming, ...undated, ...past];
-}
-
 export class SupabaseRepository implements DataRepository {
   async listEvents(): Promise<EventPost[]> {
-    const { data, error } = await supabase.from("events").select("*");
+    // 홈 화면 노출 순서는 관리자가 드래그로 직접 정한다(sort_order) — 날짜 자동 정렬은 쓰지 않는다.
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
-    return sortEventsUpcomingFirst((data ?? []).map(mapEvent));
+    return (data ?? []).map(mapEvent);
   }
 
   async getEvent(id: string): Promise<EventPost | null> {
@@ -173,6 +175,14 @@ export class SupabaseRepository implements DataRepository {
     capacity?: number;
     closed?: boolean;
   }): Promise<EventPost> {
+    const { data: maxRow } = await supabase
+      .from("events")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextSortOrder = (maxRow?.sort_order ?? 0) + 10;
+
     const { data, error } = await supabase
       .from("events")
       .insert({
@@ -183,6 +193,7 @@ export class SupabaseRepository implements DataRepository {
         venue_info: input.venueInfo ?? null,
         capacity: input.capacity ?? null,
         closed: input.closed ?? false,
+        sort_order: nextSortOrder,
       })
       .select("*")
       .single();
@@ -234,22 +245,60 @@ export class SupabaseRepository implements DataRepository {
     if (error && error.code !== "22P02") throw new Error(error.message);
   }
 
+  async reorderEvents(orderedIds: string[]): Promise<void> {
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("events")
+          .update({ sort_order: (index + 1) * 10 })
+          .eq("id", id)
+      )
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
+  }
+
   async listPhotos(): Promise<Photo[]> {
+    // 갤러리 노출 순서는 관리자가 드래그로 직접 정한다(sort_order).
     const { data, error } = await supabase
       .from("photos")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map(mapPhoto);
   }
 
   async addPhoto(input: { url: string; caption?: string }): Promise<Photo> {
+    const { data: maxRow } = await supabase
+      .from("photos")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextSortOrder = (maxRow?.sort_order ?? 0) + 10;
+
     const { data, error } = await supabase
       .from("photos")
-      .insert({ url: input.url, caption: input.caption ?? null })
+      .insert({ url: input.url, caption: input.caption ?? null, sort_order: nextSortOrder })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
+    return mapPhoto(data);
+  }
+
+  async updatePhoto(id: string, input: { caption: string | null }): Promise<Photo> {
+    const { data, error } = await supabase
+      .from("photos")
+      .update({ caption: input.caption })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) {
+      if (error.code === "PGRST116" || error.code === "22P02") {
+        throw new NotFoundError("수정하려는 사진을 찾을 수 없습니다.");
+      }
+      throw new Error(error.message);
+    }
     return mapPhoto(data);
   }
 
@@ -275,6 +324,19 @@ export class SupabaseRepository implements DataRepository {
       const path = photo!.url.slice(idx + marker.length);
       await supabase.storage.from(PHOTOS_BUCKET).remove([path]).catch(() => undefined);
     }
+  }
+
+  async reorderPhotos(orderedIds: string[]): Promise<void> {
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("photos")
+          .update({ sort_order: (index + 1) * 10 })
+          .eq("id", id)
+      )
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
   }
 
   async listSurveyResponses(): Promise<SurveyResponse[]> {

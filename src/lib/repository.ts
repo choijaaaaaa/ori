@@ -37,10 +37,13 @@ export interface DataRepository {
     }>
   ): Promise<EventPost>;
   deleteEvent(id: string): Promise<void>;
+  reorderEvents(orderedIds: string[]): Promise<void>;
 
   listPhotos(): Promise<Photo[]>;
   addPhoto(input: { url: string; caption?: string }): Promise<Photo>;
+  updatePhoto(id: string, input: { caption: string | null }): Promise<Photo>;
   deletePhoto(id: string): Promise<void>;
+  reorderPhotos(orderedIds: string[]): Promise<void>;
 
   listSurveyResponses(): Promise<SurveyResponse[]>;
   createSurveyResponse(input: {
