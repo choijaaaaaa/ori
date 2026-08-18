@@ -4,6 +4,7 @@ create table if not exists events (
   content text not null,
   event_date date,
   cover_photo_url text,
+  venue_map_url text,
   venue_info text,
   capacity integer,
   closed boolean not null default false,

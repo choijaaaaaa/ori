@@ -5,7 +5,8 @@ export interface EventPost {
   content: string;
   eventDate?: string; // 모임 일자 (YYYY-MM-DD, 선택)
   coverPhotoUrl?: string; // 카드 대표 사진
-  venueInfo?: string; // 해당 회차 오시는 길 (선택, 없으면 홈의 기본 안내를 따른다)
+  venueMapUrl?: string; // 지도 앱(구글맵 등)에서 공유한 위치 링크 — 오시는 길의 주된 안내 수단
+  venueInfo?: string; // 지도 링크에 곁들이는 보충 설명 (선택)
   capacity?: number; // 정원 (선택, 없으면 무제한)
   closed: boolean; // 관리자가 수동으로 마감했는지
   sortOrder: number; // 홈 화면 노출 순서 (관리자가 드래그로 직접 조정)

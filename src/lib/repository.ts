@@ -20,6 +20,7 @@ export interface DataRepository {
     content: string;
     eventDate?: string;
     coverPhotoUrl?: string;
+    venueMapUrl?: string;
     venueInfo?: string;
     capacity?: number;
     closed?: boolean;
@@ -31,6 +32,7 @@ export interface DataRepository {
       content: string;
       eventDate: string | null;
       coverPhotoUrl: string | null;
+      venueMapUrl: string | null;
       venueInfo: string | null;
       capacity: number | null;
       closed: boolean;

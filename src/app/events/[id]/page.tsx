@@ -91,7 +91,7 @@ export default async function EventDetailPage({
           {event.content}
         </p>
 
-        {event.venueInfo && (
+        {(event.venueMapUrl || event.venueInfo) && (
           <section aria-labelledby="event-access-heading" className="flex flex-col gap-3">
             <Bilingual
               as="h2"
@@ -102,9 +102,24 @@ export default async function EventDetailPage({
               }
               kr="오시는 길"
             />
-            <p className="whitespace-pre-wrap rounded-xl border border-amber-100 bg-white px-5 py-4 text-sm leading-7 text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-              {event.venueInfo}
-            </p>
+            <div className="flex flex-col gap-3 rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              {event.venueMapUrl && (
+                <a
+                  href={event.venueMapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
+                  aria-label="地図で見る / 지도에서 보기"
+                >
+                  📍 <BilingualInline jp="地図で見る" kr="지도에서 보기" />
+                </a>
+              )}
+              {event.venueInfo && (
+                <p className="whitespace-pre-wrap text-sm leading-7 text-zinc-600 dark:text-zinc-300">
+                  {event.venueInfo}
+                </p>
+              )}
+            </div>
           </section>
         )}
 

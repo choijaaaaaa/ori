@@ -32,11 +32,12 @@ async function loadHomeData(): Promise<
 
 export default async function Home() {
   const [data, isAdmin] = await Promise.all([loadHomeData(), isAdminAuthenticated()]);
-  // 장소가 매번 바뀌어 매 회차 새로 입력해야 하니, 가장 최근에 등록한 안내문을 불러와 빠르게 고쳐 쓸 수 있게 한다.
-  const recentVenueInfo = data.ok
-    ? [...data.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).find((e) => e.venueInfo)
-        ?.venueInfo
-    : undefined;
+  // 장소가 매번 바뀌어 매 회차 새로 입력해야 하니, 가장 최근에 등록한 안내를 불러와 빠르게 고쳐 쓸 수 있게 한다.
+  const sortedByRecent = data.ok
+    ? [...data.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    : [];
+  const recentVenueMapUrl = sortedByRecent.find((e) => e.venueMapUrl)?.venueMapUrl;
+  const recentVenueInfo = sortedByRecent.find((e) => e.venueInfo)?.venueInfo;
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-amber-50 dark:bg-zinc-950">
@@ -112,6 +113,7 @@ export default async function Home() {
               events={data.events}
               photos={data.photos}
               isAdmin={isAdmin}
+              recentVenueMapUrl={recentVenueMapUrl}
               recentVenueInfo={recentVenueInfo}
             />
             <HomePhotosSection photos={data.photos} isAdmin={isAdmin} />

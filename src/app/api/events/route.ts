@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
 import { internalErrorResponse } from "@/lib/api-error";
-import { isValidDateString } from "@/lib/validation";
+import { isValidDateString, isValidHttpUrl } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
   const content = typeof body?.content === "string" ? body.content.trim() : "";
   const eventDate = typeof body?.eventDate === "string" ? body.eventDate.trim() : "";
   const coverPhotoUrl = typeof body?.coverPhotoUrl === "string" ? body.coverPhotoUrl.trim() : "";
+  const venueMapUrl = typeof body?.venueMapUrl === "string" ? body.venueMapUrl.trim() : "";
   const venueInfo = typeof body?.venueInfo === "string" ? body.venueInfo.trim() : "";
   const capacity =
     typeof body?.capacity === "number" && Number.isFinite(body.capacity) && body.capacity > 0
@@ -47,6 +48,12 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  if (venueMapUrl && !isValidHttpUrl(venueMapUrl)) {
+    return NextResponse.json(
+      { error: { code: "INVALID_INPUT", message: "지도 링크 형식이 올바르지 않습니다." } },
+      { status: 400 }
+    );
+  }
 
   try {
     const created = await repository.createEvent({
@@ -54,6 +61,7 @@ export async function POST(request: Request) {
       content,
       eventDate: eventDate || undefined,
       coverPhotoUrl: coverPhotoUrl || undefined,
+      venueMapUrl: venueMapUrl || undefined,
       venueInfo: venueInfo || undefined,
       capacity,
       closed,

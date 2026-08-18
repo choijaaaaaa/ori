@@ -12,10 +12,12 @@ type EventWithApplicants = EventPost & { activeApplicants: number };
 export default function EventList({
   events,
   photos,
+  recentVenueMapUrl,
   recentVenueInfo,
 }: {
   events: EventWithApplicants[];
   photos: Photo[];
+  recentVenueMapUrl?: string;
   recentVenueInfo?: string;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -32,6 +34,7 @@ export default function EventList({
                 photos={photos}
                 editingEvent={item}
                 onDone={() => setEditingId(null)}
+                recentVenueMapUrl={recentVenueMapUrl}
                 recentVenueInfo={recentVenueInfo}
               />
             </li>

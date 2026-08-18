@@ -14,11 +14,13 @@ export default function EventForm({
   photos,
   editingEvent,
   onDone,
+  recentVenueMapUrl,
   recentVenueInfo,
 }: {
   photos: Photo[];
   editingEvent?: EventPost;
   onDone?: () => void;
+  recentVenueMapUrl?: string; // 같은 장소를 계속 쓰는 경우가 많아 직전 회차 지도 링크를 빠르게 불러올 수 있게
   recentVenueInfo?: string; // 장소가 매번 바뀌어도 직전 회차 안내문을 불러와 빠르게 고쳐 쓸 수 있게
 }) {
   const router = useRouter();
@@ -32,6 +34,7 @@ export default function EventForm({
   const [coverPreviewUrl, setCoverPreviewUrl] = useState(""); // 새로 업로드할 이미지 미리보기
   const [coverImageBlob, setCoverImageBlob] = useState<Blob | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [venueMapUrl, setVenueMapUrl] = useState(editingEvent?.venueMapUrl ?? "");
   const [venueInfo, setVenueInfo] = useState(editingEvent?.venueInfo ?? "");
   const [capacity, setCapacity] = useState(
     editingEvent?.capacity != null ? String(editingEvent.capacity) : ""
@@ -91,6 +94,7 @@ export default function EventForm({
                   content,
                   eventDate: eventDate.trim() === "" ? null : eventDate,
                   coverPhotoUrl: finalCoverUrl || null,
+                  venueMapUrl: venueMapUrl.trim() === "" ? null : venueMapUrl,
                   venueInfo: venueInfo.trim() === "" ? null : venueInfo,
                   capacity: capacity.trim() === "" ? null : Number(capacity),
                   closed,
@@ -100,6 +104,7 @@ export default function EventForm({
                   content,
                   eventDate: eventDate || undefined,
                   coverPhotoUrl: finalCoverUrl || undefined,
+                  venueMapUrl: venueMapUrl || undefined,
                   venueInfo: venueInfo || undefined,
                   capacity: capacity.trim() === "" ? undefined : Number(capacity),
                   closed,
@@ -123,6 +128,7 @@ export default function EventForm({
         setCoverPhotoUrl("");
         setCoverPreviewUrl("");
         setCoverImageBlob(null);
+        setVenueMapUrl("");
         setVenueInfo("");
         setCapacity("");
         setClosed(false);
@@ -254,8 +260,39 @@ export default function EventForm({
 
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor={`${uid}-venue-map`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <BilingualInline jp="アクセス（地図リンク）" kr="오시는 길 (지도 링크)" />
+          </label>
+          {recentVenueMapUrl && recentVenueMapUrl !== venueMapUrl && (
+            <button
+              type="button"
+              onClick={() => setVenueMapUrl(recentVenueMapUrl)}
+              className="rounded-full border border-amber-300 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+            >
+              <BilingualInline jp="前回のリンクをコピー" kr="이전 회차 링크 복사" />
+            </button>
+          )}
+        </div>
+        <input
+          id={`${uid}-venue-map`}
+          type="url"
+          value={venueMapUrl}
+          onChange={(e) => setVenueMapUrl(e.target.value)}
+          placeholder="https://maps.app.goo.gl/..."
+          className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+        />
+        <p className="text-xs text-zinc-400">
+          <BilingualInline
+            jp="地図アプリで場所を検索し、「共有」からリンクをコピーして貼り付けてください。"
+            kr="지도 앱에서 장소를 검색한 뒤 '공유'에서 링크를 복사해 붙여넣어주세요."
+          />
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <label htmlFor={`${uid}-venue`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            <BilingualInline jp="アクセス（この回の会場案内）" kr="오시는 길 (이 회차 장소 안내)" />
+            <BilingualInline jp="アクセス補足（任意）" kr="오시는 길 추가 설명 (선택)" />
           </label>
           {recentVenueInfo && recentVenueInfo !== venueInfo && (
             <button
@@ -271,16 +308,10 @@ export default function EventForm({
           id={`${uid}-venue`}
           value={venueInfo}
           onChange={(e) => setVenueInfo(e.target.value)}
-          rows={3}
+          rows={2}
           placeholder="例: 大阪京橋駅から徒歩5分 / 예: 오사카 교바시역에서 도보 5분"
           className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
         />
-        <p className="text-xs text-zinc-400">
-          <BilingualInline
-            jp="固定の会場がないため、開催のたびにここで案内してください。"
-            kr="정해진 장소가 없으니 매 회차 여기서 안내해주세요."
-          />
-        </p>
       </div>
 
       <div className="flex flex-col gap-1">

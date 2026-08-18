@@ -20,6 +20,7 @@ function mapEvent(row: {
   content: string;
   event_date: string | null;
   cover_photo_url: string | null;
+  venue_map_url: string | null;
   venue_info: string | null;
   capacity: number | null;
   closed: boolean;
@@ -32,6 +33,7 @@ function mapEvent(row: {
     content: row.content,
     eventDate: row.event_date ?? undefined,
     coverPhotoUrl: row.cover_photo_url ?? undefined,
+    venueMapUrl: row.venue_map_url ?? undefined,
     venueInfo: row.venue_info ?? undefined,
     capacity: row.capacity ?? undefined,
     closed: row.closed,
@@ -171,6 +173,7 @@ export class SupabaseRepository implements DataRepository {
     content: string;
     eventDate?: string;
     coverPhotoUrl?: string;
+    venueMapUrl?: string;
     venueInfo?: string;
     capacity?: number;
     closed?: boolean;
@@ -190,6 +193,7 @@ export class SupabaseRepository implements DataRepository {
         content: input.content,
         event_date: input.eventDate ?? null,
         cover_photo_url: input.coverPhotoUrl ?? null,
+        venue_map_url: input.venueMapUrl ?? null,
         venue_info: input.venueInfo ?? null,
         capacity: input.capacity ?? null,
         closed: input.closed ?? false,
@@ -208,6 +212,7 @@ export class SupabaseRepository implements DataRepository {
       content: string;
       eventDate: string | null;
       coverPhotoUrl: string | null;
+      venueMapUrl: string | null;
       venueInfo: string | null;
       capacity: number | null;
       closed: boolean;
@@ -218,6 +223,7 @@ export class SupabaseRepository implements DataRepository {
     if (input.content !== undefined) patch.content = input.content;
     if (input.eventDate !== undefined) patch.event_date = input.eventDate;
     if (input.coverPhotoUrl !== undefined) patch.cover_photo_url = input.coverPhotoUrl;
+    if (input.venueMapUrl !== undefined) patch.venue_map_url = input.venueMapUrl;
     if (input.venueInfo !== undefined) patch.venue_info = input.venueInfo;
     if (input.capacity !== undefined) patch.capacity = input.capacity;
     if (input.closed !== undefined) patch.closed = input.closed;

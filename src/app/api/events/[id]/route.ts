@@ -4,7 +4,7 @@ import { repository } from "@/lib/repository";
 import { isAdminAuthenticated } from "@/lib/require-admin";
 import { internalErrorResponse, notFoundResponse } from "@/lib/api-error";
 import { NotFoundError } from "@/lib/errors";
-import { isValidDateString } from "@/lib/validation";
+import { isValidDateString, isValidHttpUrl } from "@/lib/validation";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthenticated())) {
@@ -31,6 +31,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if ("coverPhotoUrl" in body)
     patch.coverPhotoUrl =
       typeof body.coverPhotoUrl === "string" && body.coverPhotoUrl.trim() ? body.coverPhotoUrl.trim() : null;
+  if ("venueMapUrl" in body)
+    patch.venueMapUrl =
+      typeof body.venueMapUrl === "string" && body.venueMapUrl.trim() ? body.venueMapUrl.trim() : null;
   if ("venueInfo" in body)
     patch.venueInfo = typeof body.venueInfo === "string" && body.venueInfo.trim() ? body.venueInfo.trim() : null;
   if ("capacity" in body)
@@ -49,6 +52,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (patch.eventDate && !isValidDateString(patch.eventDate)) {
     return NextResponse.json(
       { error: { code: "INVALID_INPUT", message: "모임 일자 형식이 올바르지 않습니다 (YYYY-MM-DD)." } },
+      { status: 400 }
+    );
+  }
+  if (patch.venueMapUrl && !isValidHttpUrl(patch.venueMapUrl)) {
+    return NextResponse.json(
+      { error: { code: "INVALID_INPUT", message: "지도 링크 형식이 올바르지 않습니다." } },
       { status: 400 }
     );
   }
