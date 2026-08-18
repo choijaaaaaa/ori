@@ -179,16 +179,6 @@ export default async function Home() {
           </>
         )}
       </main>
-
-      <footer className="py-6 text-center">
-        <Link
-          href="/admin/login"
-          className="text-[11px] text-zinc-300 hover:text-zinc-400 dark:text-zinc-700 dark:hover:text-zinc-600"
-          aria-label="管理者ページへ / 관리자 페이지로 이동"
-        >
-          管理者 / 관리자
-        </Link>
-      </footer>
     </div>
   );
 }
