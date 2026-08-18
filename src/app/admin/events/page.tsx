@@ -34,6 +34,11 @@ async function loadEvents(): Promise<
 
 export default async function AdminEventsPage() {
   const data = await loadEvents();
+  // 장소가 매번 바뀌어 매 회차 새로 입력해야 하니, 가장 최근에 등록한 안내문을 불러와 빠르게 고쳐 쓸 수 있게 한다.
+  const recentVenueInfo = data.ok
+    ? [...data.items].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).find((e) => e.venueInfo)
+        ?.venueInfo
+    : undefined;
 
   return (
     <div className="flex flex-col gap-8">
@@ -44,7 +49,7 @@ export default async function AdminEventsPage() {
         kr="이벤트 관리"
       />
 
-      <EventForm photos={data.ok ? data.photos : []} />
+      <EventForm photos={data.ok ? data.photos : []} recentVenueInfo={recentVenueInfo} />
 
       <section aria-labelledby="event-list-heading" className="flex flex-col gap-3">
         <Bilingual
@@ -72,7 +77,7 @@ export default async function AdminEventsPage() {
         )}
 
         {data.ok && data.items.length > 0 && (
-          <EventList events={data.items} photos={data.photos} />
+          <EventList events={data.items} photos={data.photos} recentVenueInfo={recentVenueInfo} />
         )}
       </section>
     </div>

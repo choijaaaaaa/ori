@@ -14,10 +14,12 @@ export default function EventForm({
   photos,
   editingEvent,
   onDone,
+  recentVenueInfo,
 }: {
   photos: Photo[];
   editingEvent?: EventPost;
   onDone?: () => void;
+  recentVenueInfo?: string; // 장소가 매번 바뀌어도 직전 회차 안내문을 불러와 빠르게 고쳐 쓸 수 있게
 }) {
   const router = useRouter();
   const isEditMode = Boolean(editingEvent);
@@ -251,16 +253,34 @@ export default function EventForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor={`${uid}-venue`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          <BilingualInline jp="アクセス（任意、この回だけの案内）" kr="오시는 길 (선택, 이 회차 전용 안내)" />
-        </label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor={`${uid}-venue`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <BilingualInline jp="アクセス（この回の会場案内）" kr="오시는 길 (이 회차 장소 안내)" />
+          </label>
+          {recentVenueInfo && recentVenueInfo !== venueInfo && (
+            <button
+              type="button"
+              onClick={() => setVenueInfo(recentVenueInfo)}
+              className="rounded-full border border-amber-300 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+            >
+              <BilingualInline jp="前回の内容をコピー" kr="이전 회차 내용 복사" />
+            </button>
+          )}
+        </div>
         <textarea
           id={`${uid}-venue`}
           value={venueInfo}
           onChange={(e) => setVenueInfo(e.target.value)}
           rows={3}
+          placeholder="例: 大阪京橋駅から徒歩5分 / 예: 오사카 교바시역에서 도보 5분"
           className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
         />
+        <p className="text-xs text-zinc-400">
+          <BilingualInline
+            jp="固定の会場がないため、開催のたびにここで案内してください。"
+            kr="정해진 장소가 없으니 매 회차 여기서 안내해주세요."
+          />
+        </p>
       </div>
 
       <div className="flex flex-col gap-1">

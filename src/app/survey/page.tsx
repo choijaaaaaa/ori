@@ -1,4 +1,5 @@
-// 공개 설문 참여 폼 — 제출 성공 시 같은 화면에서 감사 메시지로 전환
+// 공개 설문 참여 폼 — 실제 운영자가 쓰던 구글폼(한국어 연습회 신청서) 문항을 그대로 옮겼다.
+// 제출 성공 시 같은 화면에서 감사 메시지로 전환.
 "use client";
 
 import { Suspense, useState, type FormEvent } from "react";
@@ -6,11 +7,49 @@ import { useSearchParams } from "next/navigation";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
 
-const LEVEL_OPTIONS = [
-  { jp: "初級", kr: "초급" },
-  { jp: "中級", kr: "중급" },
-  { jp: "上級", kr: "상급" },
-  { jp: "ネイティブ", kr: "원어민" },
+const AGE_OPTIONS = [
+  { jp: "10代 ※申込は18歳以上〜", kr: "10대 (※신청은 18세 이상부터)" },
+  { jp: "20代", kr: "20대" },
+  { jp: "30代", kr: "30대" },
+  { jp: "40代", kr: "40대" },
+  { jp: "50代以上", kr: "50대 이상" },
+];
+
+const KOREAN_LEVEL_OPTIONS = [
+  { jp: "ハングルを勉強したて", kr: "한글을 막 배우기 시작함" },
+  {
+    jp: "ハングルが読める/知っている単語やフレーズが少しある程度",
+    kr: "한글을 읽을 수 있음 / 아는 단어·표현이 조금 있는 정도",
+  },
+  {
+    jp: "ハングルがスラスラ書ける/初級文法を勉強している途中",
+    kr: "한글을 술술 쓸 수 있음 / 초급 문법을 공부하는 중",
+  },
+  { jp: "初級文法を使って話すことができる", kr: "초급 문법으로 말할 수 있음" },
+  {
+    jp: "初級文法は一通り全部習ったが、もっと使いこなせるようになりたい",
+    kr: "초급 문법을 한 바퀴 다 배웠지만 더 잘 쓰고 싶음",
+  },
+  { jp: "初級文法はもう使いこなせる/中級初盤", kr: "초급 문법은 이미 잘 다룸 / 중급 초반" },
+  {
+    jp: "中級文法をかなり習ったが、もっとレベルアップしたい",
+    kr: "중급 문법을 꽤 배웠지만 더 레벨업하고 싶음",
+  },
+];
+
+const AGREEMENT_ITEMS = [
+  {
+    jp: "キャンセルや遅刻する場合は、できるだけ早く主催者へ連絡します。",
+    kr: "취소나 지각 시 최대한 빨리 주최자에게 연락합니다.",
+  },
+  {
+    jp: "この会ではあらゆる勧誘を禁止します。",
+    kr: "이 모임에서는 모든 권유(영업·포교 등) 행위를 금지합니다.",
+  },
+  {
+    jp: "勧誘を行ったことが分かった場合は、2度とこの会に参加できなくなることを理解しました。",
+    kr: "권유 행위가 확인될 경우 다시는 이 모임에 참가할 수 없다는 것을 이해했습니다.",
+  },
 ];
 
 export default function SurveyPage() {
@@ -26,24 +65,39 @@ function SurveyFormInner() {
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
   const [participantName, setParticipantName] = useState("");
-  const [contact, setContact] = useState("");
-  const [japaneseLevel, setJapaneseLevel] = useState("");
-  const [koreanLevel, setKoreanLevel] = useState("");
-  const [purpose, setPurpose] = useState("");
-  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [age, setAge] = useState("");
+  const [koreanLevels, setKoreanLevels] = useState<string[]>([]);
+  const [practiceContent, setPracticeContent] = useState("");
+  const [otherMessage, setOtherMessage] = useState("");
+  const [agreements, setAgreements] = useState([false, false, false]);
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const allAgreed = agreements.every(Boolean);
+
+  function toggleKoreanLevel(kr: string) {
+    setKoreanLevels((prev) => (prev.includes(kr) ? prev.filter((v) => v !== kr) : [...prev, kr]));
+  }
+
+  function toggleAgreement(index: number) {
+    setAgreements((prev) => prev.map((v, i) => (i === index ? !v : v)));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!allAgreed) return;
     setStatus("submitting");
     setErrorMessage("");
 
     const answers: Record<string, string> = {};
-    if (japaneseLevel) answers["일본어_수준"] = japaneseLevel;
-    if (koreanLevel) answers["한국어_수준"] = koreanLevel;
-    if (purpose.trim()) answers["참가_목적"] = purpose.trim();
-    if (message.trim()) answers["하고싶은말"] = message.trim();
+    if (age) answers["나이"] = age;
+    if (phone.trim()) answers["전화번호"] = phone.trim();
+    if (koreanLevels.length > 0) answers["한국어_수준"] = koreanLevels.join(" / ");
+    if (practiceContent.trim()) answers["연습하고_싶은_내용"] = practiceContent.trim();
+    if (otherMessage.trim()) answers["기타_전달사항"] = otherMessage.trim();
+    answers["참가_규칙_동의"] = "동의함 (3개 항목 모두 확인)";
 
     try {
       const res = await fetch("/api/survey", {
@@ -51,7 +105,7 @@ function SurveyFormInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           participantName: participantName.trim(),
-          contact: contact.trim() || undefined,
+          contact: email.trim() || undefined,
           answers,
           eventId: eventId || undefined,
         }),
@@ -118,9 +172,11 @@ function SurveyFormInner() {
           <div className="flex flex-col gap-1.5">
             <label htmlFor="participantName" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
               <span className="block">
-                お名前 <span className="text-red-500">*</span>
+                お名前またはニックネーム <span className="text-red-500">*</span>
               </span>
-              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">이름</span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                이름 또는 닉네임
+              </span>
             </label>
             <input
               id="participantName"
@@ -135,101 +191,153 @@ function SurveyFormInner() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="contact" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              <span className="block">連絡先（メール・Instagram IDなど、任意）</span>
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <span className="block">年齢（任意）</span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">나이 (선택)</span>
+            </span>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="年齢選択 / 나이 선택">
+              {AGE_OPTIONS.map((option) => (
+                <button
+                  key={option.kr}
+                  type="button"
+                  aria-pressed={age === option.kr}
+                  onClick={() => setAge(age === option.kr ? "" : option.kr)}
+                  className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                    age === option.kr
+                      ? "border-amber-600 bg-amber-600 text-white"
+                      : "border-zinc-300 bg-white text-zinc-700 hover:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                  }`}
+                >
+                  <BilingualInline jp={option.jp} kr={option.kr} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="email" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <span className="block">メールアドレス（任意）</span>
               <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                연락처 (이메일 또는 인스타 아이디, 선택)
+                메일 주소 (선택)
               </span>
             </label>
             <input
-              id="contact"
-              name="contact"
-              type="text"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-amber-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
               placeholder="example@email.com"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              <span className="block">日本語レベル（任意）</span>
-              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">일본어 수준 (선택)</span>
-            </span>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="日本語レベル選択 / 일본어 수준 선택">
-              {LEVEL_OPTIONS.map((level) => (
-                <button
-                  key={level.kr}
-                  type="button"
-                  aria-pressed={japaneseLevel === level.kr}
-                  onClick={() => setJapaneseLevel(japaneseLevel === level.kr ? "" : level.kr)}
-                  className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-                    japaneseLevel === level.kr
-                      ? "border-amber-600 bg-amber-600 text-white"
-                      : "border-zinc-300 bg-white text-zinc-700 hover:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-                  }`}
-                >
-                  <BilingualInline jp={level.jp} kr={level.kr} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              <span className="block">韓国語レベル（任意）</span>
-              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">한국어 수준 (선택)</span>
-            </span>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="韓国語レベル選択 / 한국어 수준 선택">
-              {LEVEL_OPTIONS.map((level) => (
-                <button
-                  key={level.kr}
-                  type="button"
-                  aria-pressed={koreanLevel === level.kr}
-                  onClick={() => setKoreanLevel(koreanLevel === level.kr ? "" : level.kr)}
-                  className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-                    koreanLevel === level.kr
-                      ? "border-amber-600 bg-amber-600 text-white"
-                      : "border-zinc-300 bg-white text-zinc-700 hover:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-                  }`}
-                >
-                  <BilingualInline jp={level.jp} kr={level.kr} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="purpose" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              <span className="block">参加目的（任意）</span>
-              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">참가 목적 (선택)</span>
+            <label htmlFor="phone" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <span className="block">電話番号（任意）</span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                전화번호 (선택)
+              </span>
             </label>
             <input
-              id="purpose"
-              name="purpose"
-              type="text"
-              value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
+              id="phone"
+              name="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-amber-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-              placeholder="例: 言語交換、友達作り"
+              placeholder="090-1234-5678"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="message" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              <span className="block">メッセージ・ひとこと（任意）</span>
-              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">하고 싶은 말 (선택)</span>
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <span className="block">韓国語レベル（複数選択可・任意）</span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                한국어 수준 (중복 선택 가능, 선택)
+              </span>
+            </span>
+            <div className="flex flex-col gap-2" role="group" aria-label="韓国語レベル選択 / 한국어 수준 선택">
+              {KOREAN_LEVEL_OPTIONS.map((option) => (
+                <label
+                  key={option.kr}
+                  className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm transition-colors hover:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900"
+                >
+                  <input
+                    type="checkbox"
+                    checked={koreanLevels.includes(option.kr)}
+                    onChange={() => toggleKoreanLevel(option.kr)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-amber-600"
+                  />
+                  <span className="flex flex-col">
+                    <span className="text-zinc-800 dark:text-zinc-100">{option.jp}</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">{option.kr}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="practiceContent" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <span className="block">練習したい内容（任意）</span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                연습하고 싶은 내용 (선택)
+              </span>
             </label>
             <textarea
-              id="message"
-              name="message"
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              id="practiceContent"
+              name="practiceContent"
+              rows={3}
+              value={practiceContent}
+              onChange={(e) => setPracticeContent(e.target.value)}
               className="resize-none rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-amber-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
               placeholder="自由にご記入ください"
             />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="otherMessage" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <span className="block">その他伝達事項（任意）</span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                기타 전달사항 (선택)
+              </span>
+            </label>
+            <textarea
+              id="otherMessage"
+              name="otherMessage"
+              rows={3}
+              value={otherMessage}
+              onChange={(e) => setOtherMessage(e.target.value)}
+              className="resize-none rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-amber-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+              placeholder="自由にご記入ください"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950/20">
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              <span className="block">
+                確認事項 <span className="text-red-500">*</span>
+              </span>
+              <span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                확인사항 (전부 동의해야 제출 가능)
+              </span>
+            </span>
+            {AGREEMENT_ITEMS.map((item, index) => (
+              <label key={item.kr} className="flex cursor-pointer items-start gap-2.5 text-sm">
+                <input
+                  type="checkbox"
+                  required
+                  checked={agreements[index]}
+                  onChange={() => toggleAgreement(index)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-amber-600"
+                />
+                <span className="flex flex-col">
+                  <span className="text-zinc-800 dark:text-zinc-100">{item.jp}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{item.kr}</span>
+                </span>
+              </label>
+            ))}
           </div>
 
           {status === "error" && (
@@ -244,7 +352,7 @@ function SurveyFormInner() {
 
           <button
             type="submit"
-            disabled={status === "submitting"}
+            disabled={status === "submitting" || !allAgreed}
             aria-label="アンケートを送信する / 설문 제출하기"
             className="mt-2 inline-flex items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
           >

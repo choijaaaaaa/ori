@@ -1,4 +1,5 @@
-// 공개 홈 화면 — 서비스 소개, 오시는 길, 이벤트(회차) 카드, 사진 갤러리
+// 공개 홈 화면 — 서비스 소개, 이벤트(회차) 카드, 사진 갤러리
+// 오시는 길은 고정 장소가 없어 회차마다 달라지므로 여기서는 안 보여주고, 이벤트별 상세(/events/[id])에서 안내한다.
 import Link from "next/link";
 import { repository } from "@/lib/repository";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
@@ -93,39 +94,6 @@ export default async function Home() {
               </p>
             }
           />
-        </section>
-
-        <section aria-labelledby="access-heading" className="flex flex-col gap-4">
-          <Bilingual
-            as="h2"
-            jp={<span id="access-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">アクセス</span>}
-            kr="오시는 길"
-          />
-          <div className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm">
-              <dt className="font-semibold text-zinc-900 dark:text-zinc-50">
-                <BilingualInline jp="会場エリア" kr="장소" />
-              </dt>
-              <dd className="text-zinc-600 dark:text-zinc-300">大阪府大阪市 梅田周辺（詳細は参加者に個別案内）</dd>
-
-              <dt className="font-semibold text-zinc-900 dark:text-zinc-50">
-                <BilingualInline jp="最寄駅" kr="최인접역" />
-              </dt>
-              <dd className="text-zinc-600 dark:text-zinc-300">
-                JR大阪駅 / 阪急梅田駅 / 阪神梅田駅 / 大阪メトロ梅田駅（各駅から徒歩5〜10分）
-              </dd>
-
-              <dt className="font-semibold text-zinc-900 dark:text-zinc-50">
-                <BilingualInline jp="ご案内" kr="안내" />
-              </dt>
-              <dd className="text-zinc-600 dark:text-zinc-300">
-                会場の詳しい住所・地図は、アンケートにご回答いただいた方に個別にご案内します。
-              </dd>
-            </dl>
-            <p className="mt-4 border-t border-amber-100 pt-3 text-xs text-zinc-400 dark:border-zinc-800">
-              오사카 우메다 인근에서 진행되며, 정확한 장소는 설문 응답자에게 개별 안내드립니다. (JR 오사카역 / 한큐 우메다역 / 한신 우메다역 / 오사카메트로 우메다역에서 도보 5~10분)
-            </p>
-          </div>
         </section>
 
         {data.ok && (
