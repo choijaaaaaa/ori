@@ -43,9 +43,28 @@ create table if not exists applications (
   message text,
   event_id uuid references events(id) on delete set null,
   status text not null default 'pending' check (status in ('pending','confirmed','attended','cancelled')),
+  answers jsonb not null default '{}'::jsonb,
   submitted_at timestamptz not null default now()
 );
 create index if not exists applications_event_id_idx on applications (event_id);
+
+-- 참가 신청 폼 항목(이름/희망 회차 제외) — 관리자가 추가/삭제/순서변경 가능한 동적 폼 필드.
+create table if not exists apply_form_fields (
+  id uuid primary key default gen_random_uuid(),
+  field_key text not null unique,
+  type text not null check (type in ('text','textarea','radio_group','checkbox_group','checkbox','image')),
+  label_jp text not null,
+  label_kr text not null default '',
+  help_jp text,
+  help_kr text,
+  options jsonb not null default '[]'::jsonb,
+  required boolean not null default false,
+  require_all boolean not null default false,
+  image_url text,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists apply_form_fields_sort_order_idx on apply_form_fields (sort_order);
 
 create table if not exists admin_auth (
   id int primary key default 1,
@@ -68,4 +87,5 @@ alter table participant_notes enable row level security;
 alter table applications enable row level security;
 alter table admin_auth enable row level security;
 alter table site_texts enable row level security;
+alter table apply_form_fields enable row level security;
 -- 서버(Route Handler)에서 service_role 키로만 접근하므로 별도 정책 없이 RLS로 기본 차단.

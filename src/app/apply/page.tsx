@@ -14,6 +14,7 @@ export default async function ApplyPage({
   const { eventId } = await searchParams;
   const events = await repository.listEvents().catch(() => []);
   const introText = await repository.getSiteText(APPLY_INTRO_KEY).catch(() => null);
+  const fields = await repository.listApplyFormFields().catch(() => []);
 
   // 정원/마감 여부를 옵션에 표시하기 위해 회차별 활성 신청자 수를 함께 가져온다.
   // 개별 조회가 실패해도 폼 전체가 깨지면 안 되므로 실패한 회차는 0명으로 처리한다.
@@ -31,6 +32,7 @@ export default async function ApplyPage({
       initialEventId={eventId}
       introJp={introText?.valueJp || APPLY_INTRO_DEFAULT.jp}
       introKr={introText?.valueKr || APPLY_INTRO_DEFAULT.kr}
+      fields={fields}
     />
   );
 }

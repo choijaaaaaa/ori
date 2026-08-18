@@ -44,6 +44,7 @@ export interface Application {
   message?: string;
   eventId?: string; // 어느 회차에 신청한 것인지 (선택, 미지정이면 일반 문의로 취급)
   status: ApplicationStatus;
+  answers: Record<string, string>; // apply_form_fields의 field_key를 키로 하는 동적 응답
   submittedAt: string;
 }
 
@@ -52,4 +53,34 @@ export interface SiteText {
   key: string;
   valueJp: string;
   valueKr: string;
+}
+
+export type ApplyFormFieldType =
+  | "text"
+  | "textarea"
+  | "radio_group" // 단일 선택
+  | "checkbox_group" // 다중 선택(또는 require_all=true면 전부 체크해야 하는 동의 항목)
+  | "checkbox" // 단일 체크(예/아니오)
+  | "image"; // 관리자가 올린 안내 이미지를 보여주기만 하는 정보성 블록(응답 없음)
+
+export interface ApplyFormFieldOption {
+  jp: string;
+  kr: string;
+}
+
+// 참가 신청 폼의 이름/희망 회차를 제외한 나머지 문항 — 관리자가 추가/삭제/순서변경 가능.
+export interface ApplyFormField {
+  id: string;
+  fieldKey: string;
+  type: ApplyFormFieldType;
+  labelJp: string;
+  labelKr: string;
+  helpJp?: string;
+  helpKr?: string;
+  options: ApplyFormFieldOption[]; // radio_group/checkbox_group 전용
+  required: boolean;
+  requireAll: boolean; // checkbox_group에서 true면 옵션 전부 체크해야 필수 통과(동의 체크리스트용)
+  imageUrl?: string; // type: "image" 전용
+  sortOrder: number;
+  createdAt: string;
 }

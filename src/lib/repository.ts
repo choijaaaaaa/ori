@@ -7,6 +7,9 @@ import type {
   Application,
   ApplicationStatus,
   SiteText,
+  ApplyFormField,
+  ApplyFormFieldType,
+  ApplyFormFieldOption,
 } from "./types";
 
 export interface DataRepository {
@@ -57,11 +60,41 @@ export interface DataRepository {
     contact?: string;
     message?: string;
     eventId?: string;
+    answers?: Record<string, string>;
   }): Promise<Application>;
   updateApplicationStatus(id: string, status: ApplicationStatus): Promise<Application>;
 
   getSiteText(key: string): Promise<SiteText | null>;
   upsertSiteText(key: string, input: { valueJp: string; valueKr: string }): Promise<SiteText>;
+
+  listApplyFormFields(): Promise<ApplyFormField[]>;
+  createApplyFormField(input: {
+    fieldKey: string;
+    type: ApplyFormFieldType;
+    labelJp: string;
+    labelKr?: string;
+    helpJp?: string;
+    helpKr?: string;
+    options?: ApplyFormFieldOption[];
+    required?: boolean;
+    requireAll?: boolean;
+    imageUrl?: string;
+  }): Promise<ApplyFormField>;
+  updateApplyFormField(
+    id: string,
+    input: Partial<{
+      labelJp: string;
+      labelKr: string;
+      helpJp: string;
+      helpKr: string;
+      options: ApplyFormFieldOption[];
+      required: boolean;
+      requireAll: boolean;
+      imageUrl: string | null;
+    }>
+  ): Promise<ApplyFormField>;
+  deleteApplyFormField(id: string): Promise<void>;
+  reorderApplyFormFields(orderedIds: string[]): Promise<void>;
 }
 
 export const repository: DataRepository = new SupabaseRepository();

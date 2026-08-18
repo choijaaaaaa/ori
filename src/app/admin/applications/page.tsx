@@ -1,7 +1,7 @@
 // 관리자 전용 참가 신청 내역 — 이벤트(회차)별로 그룹핑해서 보여준다
 import Link from "next/link";
 import { repository } from "@/lib/repository";
-import type { Application, ApplicationStatus, EventPost } from "@/lib/types";
+import type { Application, ApplicationStatus, ApplyFormField, EventPost } from "@/lib/types";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import StatusSelect from "./status-select";
 import CsvDownloadButton from "./csv-download-button";
@@ -10,14 +10,16 @@ import CsvDownloadButton from "./csv-download-button";
 export const dynamic = "force-dynamic";
 
 async function loadData(): Promise<
-  { ok: true; applications: Application[]; events: EventPost[] } | { ok: false }
+  | { ok: true; applications: Application[]; events: EventPost[]; fields: ApplyFormField[] }
+  | { ok: false }
 > {
   try {
-    const [applications, events] = await Promise.all([
+    const [applications, events, fields] = await Promise.all([
       repository.listApplications(),
       repository.listEvents(),
+      repository.listApplyFormFields().catch(() => []),
     ]);
-    return { ok: true, applications, events };
+    return { ok: true, applications, events, fields };
   } catch (error) {
     console.error("신청 내역 로드 실패", error);
     return { ok: false };
@@ -38,7 +40,29 @@ const STATUS_BADGE_LABEL: Record<ApplicationStatus, { jp: string; kr: string }> 
   cancelled: { jp: "キャンセル", kr: "취소" },
 };
 
-function ApplicationCard({ a }: { a: Application }) {
+// answers의 각 항목을 fields(sortOrder순)에 매칭되는 라벨로 붙이고, 매칭 안 되는(삭제된 필드의)
+// 키는 원래 키 문자열 그대로 fallback해서 뒤에 붙인다.
+function orderedAnswerEntries(
+  answers: Record<string, string>,
+  fields: ApplyFormField[]
+): { label: string; value: string }[] {
+  const sortedFields = [...fields].sort((a, b) => a.sortOrder - b.sortOrder);
+  const matched: { label: string; value: string }[] = [];
+  const matchedKeys = new Set<string>();
+  for (const field of sortedFields) {
+    const value = answers[field.fieldKey];
+    if (value === undefined) continue;
+    matched.push({ label: field.labelKr || field.labelJp, value });
+    matchedKeys.add(field.fieldKey);
+  }
+  const orphaned = Object.entries(answers)
+    .filter(([key]) => !matchedKeys.has(key))
+    .map(([key, value]) => ({ label: key, value }));
+  return [...matched, ...orphaned];
+}
+
+function ApplicationCard({ a, fields }: { a: Application; fields: ApplyFormField[] }) {
+  const answerEntries = orderedAnswerEntries(a.answers, fields);
   return (
     <li className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -73,6 +97,16 @@ function ApplicationCard({ a }: { a: Application }) {
           <BilingualInline jp="申し込み内容" kr="신청 내용" />: {a.message}
         </p>
       )}
+      {answerEntries.length > 0 && (
+        <dl className="mt-2 flex flex-col gap-1 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+          {answerEntries.map(({ label, value }) => (
+            <div key={label} className="flex flex-wrap gap-1 text-sm">
+              <dt className="font-medium text-zinc-500 dark:text-zinc-400">{label}:</dt>
+              <dd className="whitespace-pre-wrap text-zinc-700 dark:text-zinc-200">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
     </li>
   );
 }
@@ -89,7 +123,9 @@ export default async function AdminApplicationsPage() {
           jp="申し込み一覧"
           kr="신청 내역"
         />
-        {data.ok && <CsvDownloadButton applications={data.applications} events={data.events} />}
+        {data.ok && (
+          <CsvDownloadButton applications={data.applications} events={data.events} fields={data.fields} />
+        )}
       </div>
 
       {!data.ok && (
@@ -135,7 +171,7 @@ export default async function AdminApplicationsPage() {
                 </h2>
                 <ul className="flex flex-col gap-3">
                   {applicants.map((a) => (
-                    <ApplicationCard key={a.id} a={a} />
+                    <ApplicationCard key={a.id} a={a} fields={data.fields} />
                   ))}
                 </ul>
               </section>
@@ -159,7 +195,7 @@ export default async function AdminApplicationsPage() {
                 </h2>
                 <ul className="flex flex-col gap-3">
                   {unassigned.map((a) => (
-                    <ApplicationCard key={a.id} a={a} />
+                    <ApplicationCard key={a.id} a={a} fields={data.fields} />
                   ))}
                 </ul>
               </section>

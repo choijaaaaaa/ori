@@ -9,6 +9,9 @@ import type {
   Application,
   ApplicationStatus,
   SiteText,
+  ApplyFormField,
+  ApplyFormFieldType,
+  ApplyFormFieldOption,
 } from "./types";
 
 function mapEvent(row: {
@@ -80,6 +83,7 @@ function mapApplication(row: {
   message: string | null;
   event_id: string | null;
   status: ApplicationStatus;
+  answers: Record<string, string> | null;
   submitted_at: string;
 }): Application {
   return {
@@ -89,7 +93,40 @@ function mapApplication(row: {
     message: row.message ?? undefined,
     eventId: row.event_id ?? undefined,
     status: row.status,
+    answers: row.answers ?? {},
     submittedAt: row.submitted_at,
+  };
+}
+
+function mapApplyFormField(row: {
+  id: string;
+  field_key: string;
+  type: ApplyFormFieldType;
+  label_jp: string;
+  label_kr: string;
+  help_jp: string | null;
+  help_kr: string | null;
+  options: ApplyFormFieldOption[] | null;
+  required: boolean;
+  require_all: boolean;
+  image_url: string | null;
+  sort_order: number;
+  created_at: string;
+}): ApplyFormField {
+  return {
+    id: row.id,
+    fieldKey: row.field_key,
+    type: row.type,
+    labelJp: row.label_jp,
+    labelKr: row.label_kr,
+    helpJp: row.help_jp ?? undefined,
+    helpKr: row.help_kr ?? undefined,
+    options: row.options ?? [],
+    required: row.required,
+    requireAll: row.require_all,
+    imageUrl: row.image_url ?? undefined,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
   };
 }
 
@@ -317,6 +354,7 @@ export class SupabaseRepository implements DataRepository {
     contact?: string;
     message?: string;
     eventId?: string;
+    answers?: Record<string, string>;
   }): Promise<Application> {
     const { data, error } = await supabase
       .from("applications")
@@ -325,6 +363,7 @@ export class SupabaseRepository implements DataRepository {
         contact: input.contact ?? null,
         message: input.message ?? null,
         event_id: input.eventId ?? null,
+        answers: input.answers ?? {},
       })
       .select("*")
       .single();
@@ -370,5 +409,113 @@ export class SupabaseRepository implements DataRepository {
       .single();
     if (error) throw new Error(error.message);
     return { key: data.key, valueJp: data.value_jp, valueKr: data.value_kr };
+  }
+
+  async listApplyFormFields(): Promise<ApplyFormField[]> {
+    const { data, error } = await supabase
+      .from("apply_form_fields")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapApplyFormField);
+  }
+
+  async createApplyFormField(input: {
+    fieldKey: string;
+    type: ApplyFormFieldType;
+    labelJp: string;
+    labelKr?: string;
+    helpJp?: string;
+    helpKr?: string;
+    options?: ApplyFormFieldOption[];
+    required?: boolean;
+    requireAll?: boolean;
+    imageUrl?: string;
+  }): Promise<ApplyFormField> {
+    // 새로 추가되는 항목은 항상 맨 뒤로 붙인다.
+    const { data: maxRow } = await supabase
+      .from("apply_form_fields")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextSortOrder = (maxRow?.sort_order ?? 0) + 10;
+
+    const { data, error } = await supabase
+      .from("apply_form_fields")
+      .insert({
+        field_key: input.fieldKey,
+        type: input.type,
+        label_jp: input.labelJp,
+        label_kr: input.labelKr ?? "",
+        help_jp: input.helpJp ?? null,
+        help_kr: input.helpKr ?? null,
+        options: input.options ?? [],
+        required: input.required ?? false,
+        require_all: input.requireAll ?? false,
+        image_url: input.imageUrl ?? null,
+        sort_order: nextSortOrder,
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return mapApplyFormField(data);
+  }
+
+  async updateApplyFormField(
+    id: string,
+    input: Partial<{
+      labelJp: string;
+      labelKr: string;
+      helpJp: string;
+      helpKr: string;
+      options: ApplyFormFieldOption[];
+      required: boolean;
+      requireAll: boolean;
+      imageUrl: string | null;
+    }>
+  ): Promise<ApplyFormField> {
+    const patch: Record<string, unknown> = {};
+    if (input.labelJp !== undefined) patch.label_jp = input.labelJp;
+    if (input.labelKr !== undefined) patch.label_kr = input.labelKr;
+    if (input.helpJp !== undefined) patch.help_jp = input.helpJp;
+    if (input.helpKr !== undefined) patch.help_kr = input.helpKr;
+    if (input.options !== undefined) patch.options = input.options;
+    if (input.required !== undefined) patch.required = input.required;
+    if (input.requireAll !== undefined) patch.require_all = input.requireAll;
+    if (input.imageUrl !== undefined) patch.image_url = input.imageUrl;
+
+    const { data, error } = await supabase
+      .from("apply_form_fields")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) {
+      if (error.code === "PGRST116" || error.code === "22P02") {
+        throw new NotFoundError("수정하려는 항목을 찾을 수 없습니다.");
+      }
+      throw new Error(error.message);
+    }
+    return mapApplyFormField(data);
+  }
+
+  async deleteApplyFormField(id: string): Promise<void> {
+    const { error } = await supabase.from("apply_form_fields").delete().eq("id", id);
+    if (error && error.code !== "22P02") throw new Error(error.message);
+  }
+
+  async reorderApplyFormFields(orderedIds: string[]): Promise<void> {
+    // 필드 개수가 적고(관리자 전용, 빈도 낮은) 작업이라 id별 개별 update를 병렬로 실행한다.
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("apply_form_fields")
+          .update({ sort_order: (index + 1) * 10 })
+          .eq("id", id)
+      )
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
   }
 }
