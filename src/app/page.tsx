@@ -9,6 +9,8 @@ import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
 import HomeEventsSection from "./home-events-section";
 import HomePhotosSection from "./home-photos-section";
+import HomeInstagramSection from "./home-instagram-section";
+import { fetchRecentInstagramPosts, isInstagramConfigured } from "@/lib/instagram";
 import type { EventPost, Photo } from "@/lib/types";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
@@ -31,7 +33,11 @@ async function loadHomeData(): Promise<
 }
 
 export default async function Home() {
-  const [data, isAdmin] = await Promise.all([loadHomeData(), isAdminAuthenticated()]);
+  const [data, isAdmin, instagramPosts] = await Promise.all([
+    loadHomeData(),
+    isAdminAuthenticated(),
+    fetchRecentInstagramPosts(),
+  ]);
   // 장소가 매번 바뀌어 매 회차 새로 입력해야 하니, 가장 최근에 등록한 안내를 불러와 빠르게 고쳐 쓸 수 있게 한다.
   const sortedByRecent = data.ok
     ? [...data.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -119,6 +125,12 @@ export default async function Home() {
             <HomePhotosSection photos={data.photos} isAdmin={isAdmin} />
           </>
         )}
+
+        <HomeInstagramSection
+          posts={instagramPosts}
+          isConfigured={isInstagramConfigured()}
+          isAdmin={isAdmin}
+        />
       </main>
     </div>
   );
