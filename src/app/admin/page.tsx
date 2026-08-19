@@ -60,7 +60,7 @@ export default async function AdminDashboardPage() {
 
       {data.ok && (
         <>
-          <section aria-label="アンケート回答概要 / 설문 응답 요약" className="grid grid-cols-2 gap-4 sm:grid-cols-2">
+          <section aria-label="アンケート回答概要 / 설문 응답 요약" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 <BilingualInline jp="総アンケート回答数" kr="전체 설문 응답 수" />
@@ -108,7 +108,7 @@ export default async function AdminDashboardPage() {
           </section>
 
           <section aria-label="申し込み概要 / 신청 통계" className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
                   <BilingualInline jp="総申し込み数" kr="전체 신청 수" />
