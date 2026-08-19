@@ -32,6 +32,12 @@ export default function SiteTextForm({
     if (result !== null) setValueKr(result);
   }
 
+  // 일본어 입력을 마치고 다른 곳을 클릭하면 자동으로 번역해 채운다. 한국어를 이미
+  // 직접 써놓은 경우는 실수로 덮어쓰지 않도록 비어있을 때만 동작한다.
+  function handleJpBlur() {
+    if (!valueKr.trim() && valueJp.trim()) handleAutoTranslate();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
@@ -72,6 +78,7 @@ export default function SiteTextForm({
           id={`${siteTextKey}-jp`}
           value={valueJp}
           onChange={(event) => setValueJp(event.target.value)}
+          onBlur={handleJpBlur}
           rows={3}
           required
           className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"

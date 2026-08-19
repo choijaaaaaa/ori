@@ -35,6 +35,12 @@ export default function HomeAboutSection({
     if (result !== null) setKr(result);
   }
 
+  // 일본어 입력을 마치고 다른 곳을 클릭하면 자동으로 번역해 채운다. 한국어를 이미
+  // 직접 써놓은 경우는 실수로 덮어쓰지 않도록 비어있을 때만 동작한다.
+  function handleJpBlur() {
+    if (!kr.trim() && jp.trim()) handleAutoTranslate();
+  }
+
   // 방문자에게는 내용이 없으면 섹션 자체를 아예 숨긴다.
   if (!isAdmin && !initialJp) return null;
 
@@ -95,6 +101,7 @@ export default function HomeAboutSection({
             <textarea
               value={jp}
               onChange={(e) => setJp(e.target.value)}
+              onBlur={handleJpBlur}
               rows={4}
               className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
             />

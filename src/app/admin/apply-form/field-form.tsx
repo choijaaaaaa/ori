@@ -75,14 +75,29 @@ export default function FieldForm({
     if (result !== null) setLabelKr(result);
   }
 
+  // 일본어 입력을 마치고 다른 곳을 클릭하면 자동으로 번역해 채운다. 한국어를 이미
+  // 직접 써놓은 경우는 실수로 덮어쓰지 않도록 비어있을 때만 동작한다.
+  function handleLabelJpBlur() {
+    if (!labelKr.trim() && labelJp.trim()) handleAutoTranslateLabel();
+  }
+
   async function handleAutoTranslateHelp() {
     const result = await translate(helpJp);
     if (result !== null) setHelpKr(result);
   }
 
+  function handleHelpJpBlur() {
+    if (!helpKr.trim() && helpJp.trim()) handleAutoTranslateHelp();
+  }
+
   async function handleAutoTranslateOption(index: number) {
     const result = await translate(options[index]?.jp ?? "");
     if (result !== null) updateOption(index, "kr", result);
+  }
+
+  function handleOptionJpBlur(index: number) {
+    const opt = options[index];
+    if (opt && !opt.kr.trim() && opt.jp.trim()) handleAutoTranslateOption(index);
   }
 
   function addOption() {
@@ -258,6 +273,7 @@ export default function FieldForm({
             type="text"
             value={labelJp}
             onChange={(e) => setLabelJp(e.target.value)}
+            onBlur={handleLabelJpBlur}
             required
             className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
           />
@@ -295,6 +311,7 @@ export default function FieldForm({
             id={`${uid}-helpJp`}
             value={helpJp}
             onChange={(e) => setHelpJp(e.target.value)}
+            onBlur={handleHelpJpBlur}
             rows={2}
             className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
           />
@@ -340,6 +357,7 @@ export default function FieldForm({
                 type="text"
                 value={opt.jp}
                 onChange={(e) => updateOption(index, "jp", e.target.value)}
+                onBlur={() => handleOptionJpBlur(index)}
                 placeholder="日本語"
                 aria-label={`選択肢${index + 1}（日本語） / 선택지 ${index + 1} (일본어)`}
                 className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
