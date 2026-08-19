@@ -5,16 +5,21 @@
 // 미리보기 상태: 로그아웃하지 않고도 방문자 화면 그대로 볼 수 있게 편집 UI를 숨긴 상태 —
 // "관리자로 돌아가기" 버튼만 떠서 원래대로 되돌릴 수 있다.
 // /admin/* 경로에서는 자체 사이드바+로그아웃 UI가 이미 있으므로 숨긴다.
+//
+// 미리보기 토글은 /api/preview-mode 서버 라우트로 쿠키를 설정한다(Set-Cookie) —
+// 예전엔 document.cookie를 클라이언트에서 직접 썼는데, 모바일에서 "눌러도 반응이
+// 없다"는 제보로 더 확실한 서버 왕복 방식으로 교체(로딩 상태로 탭이 실제 처리
+// 중인지도 눈에 보이게 함).
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BilingualInline } from "./bilingual";
 
-// src/lib/preview-mode.ts의 PREVIEW_MODE_COOKIE와 반드시 같은 이름이어야 한다.
-// (그 파일은 next/headers를 써서 서버 전용이라 클라이언트 컴포넌트에서 import할 수 없다.)
-const PREVIEW_MODE_COOKIE = "ori_preview_mode";
-
-function setPreviewCookie(enabled: boolean) {
-  const maxAge = enabled ? 60 * 60 * 24 * 30 : 0; // 켤 때 30일, 끌 때 즉시 만료
-  document.cookie = `${PREVIEW_MODE_COOKIE}=${enabled ? "1" : ""}; path=/; max-age=${maxAge}`;
+async function setPreviewMode(enabled: boolean) {
+  await fetch("/api/preview-mode", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
 }
 
 export function AdminAccessButton({
@@ -26,39 +31,54 @@ export function AdminAccessButton({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isToggling, setIsToggling] = useState(false);
   if (pathname?.startsWith("/admin")) return null;
+
+  async function handleToggle(enabled: boolean) {
+    setIsToggling(true);
+    try {
+      await setPreviewMode(enabled);
+      router.refresh();
+    } finally {
+      setIsToggling(false);
+    }
+  }
 
   if (authenticated && previewMode) {
     return (
-      <div className="fixed right-2 top-2 z-50 max-w-[calc(100vw-1rem)] sm:right-4 sm:top-4">
+      <div className="fixed right-3 top-3 z-50 max-w-[calc(100vw-1.5rem)] sm:right-4 sm:top-4">
         <button
           type="button"
-          onClick={() => {
-            setPreviewCookie(false);
-            router.refresh();
-          }}
+          onClick={() => handleToggle(false)}
+          disabled={isToggling}
           aria-label="プレビューを終了して管理者モードに戻る / 미리보기를 끝내고 관리자 모드로 돌아가기"
-          className="inline-flex items-center justify-center rounded-full bg-zinc-700 px-3 py-1.5 text-[11px] leading-tight text-white shadow-md transition-colors hover:bg-zinc-800 sm:px-4 sm:py-2 sm:text-xs"
+          className="inline-flex items-center justify-center rounded-full bg-zinc-700 px-3 py-1.5 text-[11px] leading-tight text-white shadow-md transition-colors hover:bg-zinc-800 disabled:opacity-60 sm:px-4 sm:py-2 sm:text-xs"
         >
-          <BilingualInline jp="プレビュー中・戻る" kr="미리보기 중 · 돌아가기" />
+          {isToggling ? (
+            <BilingualInline jp="処理中..." kr="처리 중..." />
+          ) : (
+            <BilingualInline jp="プレビュー中・戻る" kr="미리보기 중 · 돌아가기" />
+          )}
         </button>
       </div>
     );
   }
 
   return (
-    <div className="fixed right-2 top-2 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-1.5 sm:right-4 sm:top-4 sm:flex-row sm:items-center sm:gap-2">
+    <div className="fixed right-3 top-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-1.5 sm:right-4 sm:top-4 sm:flex-row sm:items-center sm:gap-2">
       {authenticated && (
         <button
           type="button"
-          onClick={() => {
-            setPreviewCookie(true);
-            router.refresh();
-          }}
+          onClick={() => handleToggle(true)}
+          disabled={isToggling}
           aria-label="訪問者の画面をプレビュー / 방문자 화면 미리보기"
-          className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-3 py-1.5 text-[11px] text-amber-700 shadow-md transition-colors hover:bg-amber-50 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-300 dark:hover:bg-amber-950/40 sm:px-4 sm:py-2 sm:text-xs"
+          className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-3 py-1.5 text-[11px] text-amber-700 shadow-md transition-colors hover:bg-amber-50 disabled:opacity-60 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-300 dark:hover:bg-amber-950/40 sm:px-4 sm:py-2 sm:text-xs"
         >
-          <BilingualInline jp="プレビュー" kr="미리보기" />
+          {isToggling ? (
+            <BilingualInline jp="処理中..." kr="처리 중..." />
+          ) : (
+            <BilingualInline jp="プレビュー" kr="미리보기" />
+          )}
         </button>
       )}
       {authenticated ? (
