@@ -6,6 +6,7 @@ import { useId, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BilingualInline } from "@/components/bilingual";
 import { resizeImageFile, uploadImage } from "@/lib/image-utils";
+import { useAutoTranslate } from "@/lib/use-auto-translate";
 import type { ApplyFormField, ApplyFormFieldOption, ApplyFormFieldType } from "@/lib/types";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
@@ -65,6 +66,23 @@ export default function FieldForm({
 
   function updateOption(index: number, field: "jp" | "kr", value: string) {
     setOptions((prev) => prev.map((opt, i) => (i === index ? { ...opt, [field]: value } : opt)));
+  }
+
+  const { translate, isTranslating, error: translateError } = useAutoTranslate();
+
+  async function handleAutoTranslateLabel() {
+    const result = await translate(labelJp);
+    if (result !== null) setLabelKr(result);
+  }
+
+  async function handleAutoTranslateHelp() {
+    const result = await translate(helpJp);
+    if (result !== null) setHelpKr(result);
+  }
+
+  async function handleAutoTranslateOption(index: number) {
+    const result = await translate(options[index]?.jp ?? "");
+    if (result !== null) updateOption(index, "kr", result);
   }
 
   function addOption() {
@@ -245,9 +263,19 @@ export default function FieldForm({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor={`${uid}-labelKr`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            <BilingualInline jp="ラベル（韓国語）" kr="라벨 (한국어)" />
-          </label>
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <label htmlFor={`${uid}-labelKr`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <BilingualInline jp="ラベル（韓国語）" kr="라벨 (한국어)" />
+            </label>
+            <button
+              type="button"
+              onClick={handleAutoTranslateLabel}
+              disabled={isTranslating || !labelJp.trim()}
+              className="rounded-full border border-amber-300 px-2 py-0.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+            >
+              <BilingualInline jp="自動翻訳" kr="자동 번역" />
+            </button>
+          </div>
           <input
             id={`${uid}-labelKr`}
             type="text"
@@ -272,9 +300,19 @@ export default function FieldForm({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor={`${uid}-helpKr`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            <BilingualInline jp="補足説明（韓国語・任意）" kr="도움말 (한국어, 선택)" />
-          </label>
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <label htmlFor={`${uid}-helpKr`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <BilingualInline jp="補足説明（韓国語・任意）" kr="도움말 (한국어, 선택)" />
+            </label>
+            <button
+              type="button"
+              onClick={handleAutoTranslateHelp}
+              disabled={isTranslating || !helpJp.trim()}
+              className="rounded-full border border-amber-300 px-2 py-0.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+            >
+              <BilingualInline jp="自動翻訳" kr="자동 번역" />
+            </button>
+          </div>
           <textarea
             id={`${uid}-helpKr`}
             value={helpKr}
@@ -284,6 +322,7 @@ export default function FieldForm({
           />
         </div>
       </div>
+      {translateError && <p className="text-xs text-red-600 dark:text-red-400">{translateError}</p>}
 
       {needsOptions && (
         <div className="flex flex-col gap-2">
@@ -313,6 +352,15 @@ export default function FieldForm({
                 aria-label={`選択肢${index + 1}（韓国語） / 선택지 ${index + 1} (한국어)`}
                 className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
               />
+              <button
+                type="button"
+                onClick={() => handleAutoTranslateOption(index)}
+                disabled={isTranslating || !opt.jp.trim()}
+                aria-label={`選択肢${index + 1}を自動翻訳 / 선택지 ${index + 1} 자동 번역`}
+                className="inline-flex items-center justify-center rounded-full border border-amber-300 px-2.5 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+              >
+                訳
+              </button>
               <button
                 type="button"
                 onClick={() => removeOption(index)}

@@ -5,6 +5,7 @@
 // (자동 번역은 별도 API 키가 필요해 아직 붙이지 않았다).
 import { useState, type FormEvent } from "react";
 import { BilingualInline } from "@/components/bilingual";
+import { useAutoTranslate } from "@/lib/use-auto-translate";
 
 export default function SiteTextForm({
   siteTextKey,
@@ -24,6 +25,12 @@ export default function SiteTextForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const { translate, isTranslating, error: translateError } = useAutoTranslate();
+
+  async function handleAutoTranslate() {
+    const result = await translate(valueJp);
+    if (result !== null) setValueKr(result);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,12 +79,26 @@ export default function SiteTextForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor={`${siteTextKey}-kr`}
-          className="text-sm font-medium text-gray-700 dark:text-neutral-300"
-        >
-          <BilingualInline jp={`${labelJp}（韓国語・下に表示）`} kr={`${labelKr} (한국어, 아래 보조로 표시)`} />
-        </label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label
+            htmlFor={`${siteTextKey}-kr`}
+            className="text-sm font-medium text-gray-700 dark:text-neutral-300"
+          >
+            <BilingualInline jp={`${labelJp}（韓国語・下に表示）`} kr={`${labelKr} (한국어, 아래 보조로 표시)`} />
+          </label>
+          <button
+            type="button"
+            onClick={handleAutoTranslate}
+            disabled={isTranslating || !valueJp.trim()}
+            className="rounded-full border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            {isTranslating ? (
+              <BilingualInline jp="翻訳中..." kr="번역 중..." />
+            ) : (
+              <BilingualInline jp="日本語から自動翻訳" kr="일본어에서 자동 번역" />
+            )}
+          </button>
+        </div>
         <textarea
           id={`${siteTextKey}-kr`}
           value={valueKr}
@@ -85,6 +106,7 @@ export default function SiteTextForm({
           rows={3}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
         />
+        {translateError && <p className="text-xs text-red-600 dark:text-red-400">{translateError}</p>}
       </div>
 
       {errorMessage && (

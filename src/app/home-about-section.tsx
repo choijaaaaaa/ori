@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { ABOUT_INTRO_KEY } from "@/lib/site-text-defaults";
+import { useAutoTranslate } from "@/lib/use-auto-translate";
 import HomeStaffSection from "./home-staff-section";
 import type { StaffMember } from "@/lib/types";
 
@@ -27,6 +28,12 @@ export default function HomeAboutSection({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { translate, isTranslating, error: translateError } = useAutoTranslate();
+
+  async function handleAutoTranslate() {
+    const result = await translate(jp);
+    if (result !== null) setKr(result);
+  }
 
   // 방문자에게는 내용이 없으면 섹션 자체를 아예 숨긴다.
   if (!isAdmin && !initialJp) return null;
@@ -93,15 +100,30 @@ export default function HomeAboutSection({
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              <BilingualInline jp="紹介文（韓国語）" kr="소개 (한국어)" />
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <BilingualInline jp="紹介文（韓国語）" kr="소개 (한국어)" />
+              </label>
+              <button
+                type="button"
+                onClick={handleAutoTranslate}
+                disabled={isTranslating || !jp.trim()}
+                className="rounded-full border border-amber-300 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+              >
+                {isTranslating ? (
+                  <BilingualInline jp="翻訳中..." kr="번역 중..." />
+                ) : (
+                  <BilingualInline jp="日本語から自動翻訳" kr="일본어에서 자동 번역" />
+                )}
+              </button>
+            </div>
             <textarea
               value={kr}
               onChange={(e) => setKr(e.target.value)}
               rows={4}
               className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
             />
+            {translateError && <p className="text-xs text-red-600 dark:text-red-400">{translateError}</p>}
           </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex items-center gap-2">
