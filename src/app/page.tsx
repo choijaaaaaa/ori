@@ -4,7 +4,7 @@
 // (HomeEventsSection/HomePhotosSection이 담당 — apply-form.tsx의 인라인 편집 패턴과 동일).
 import Link from "next/link";
 import { repository } from "@/lib/repository";
-import { isAdminAuthenticated } from "@/lib/require-admin";
+import { isAdminUiVisible } from "@/lib/require-admin";
 import { Bilingual, BilingualInline } from "@/components/bilingual";
 import { DecorativeBackground } from "@/components/decorative-background";
 import HomeEventsSection from "./home-events-section";
@@ -37,7 +37,7 @@ async function loadHomeData(): Promise<
 export default async function Home() {
   const [data, isAdmin, instagramPosts, aboutText, staffMembers] = await Promise.all([
     loadHomeData(),
-    isAdminAuthenticated(),
+    isAdminUiVisible(),
     fetchRecentInstagramPosts(),
     repository.getSiteText(ABOUT_INTRO_KEY).catch(() => null),
     repository.listStaffMembers().catch(() => []),

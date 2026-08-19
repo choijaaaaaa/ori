@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { isAdminAuthenticated } from "@/lib/require-admin";
+import { isPreviewMode } from "@/lib/preview-mode";
 import { AdminAccessButton } from "@/components/admin-access-button";
 import "./globals.css";
 
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const authenticated = await isAdminAuthenticated();
+  const [authenticated, previewMode] = await Promise.all([isAdminAuthenticated(), isPreviewMode()]);
 
   return (
     <html
@@ -28,7 +29,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AdminAccessButton authenticated={authenticated} />
+        <AdminAccessButton authenticated={authenticated} previewMode={previewMode} />
         {children}
       </body>
     </html>
