@@ -272,7 +272,7 @@ export default function HomeStaffSection({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full border border-amber-300 bg-white/90 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm backdrop-blur transition-colors hover:bg-amber-50 dark:border-amber-800 dark:bg-zinc-900/90 dark:text-amber-300 dark:hover:bg-amber-950/40"
+        className="inline-flex items-center justify-center rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
       >
         <BilingualInline jp="Staff紹介" kr="Staff 소개" />
       </button>

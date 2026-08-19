@@ -142,44 +142,44 @@ export default function HomeAboutSection({
           }
           kr="소개"
         />
-        {isAdmin && (
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              <BilingualInline jp="編集" kr="수정" />
-            </button>
-            {initialJp && (
+        <div className="flex items-center gap-1.5">
+          {isAdmin && (
+            <>
               <button
                 type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="rounded-full border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950"
+                onClick={() => setIsEditing(true)}
+                className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
-                {isDeleting ? <BilingualInline jp="削除中..." kr="삭제 중..." /> : <BilingualInline jp="削除" kr="삭제" />}
+                <BilingualInline jp="編集" kr="수정" />
               </button>
-            )}
-          </div>
-        )}
+              {initialJp && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="rounded-full border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950"
+                >
+                  {isDeleting ? <BilingualInline jp="削除中..." kr="삭제 중..." /> : <BilingualInline jp="削除" kr="삭제" />}
+                </button>
+              )}
+            </>
+          )}
+          <HomeStaffSection staffMembers={staffMembers} isAdmin={isAdmin} />
+        </div>
       </div>
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      <div className="relative">
-        {initialJp ? (
-          <Bilingual
-            as="div"
-            className="rounded-xl border border-amber-100 bg-white px-5 py-4 pr-28 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-            jp={<p className="whitespace-pre-wrap text-sm leading-7 text-zinc-600 dark:text-zinc-300">{initialJp}</p>}
-            kr={<p className="mt-2 whitespace-pre-wrap text-sm leading-7">{initialKr}</p>}
-          />
-        ) : (
-          <p className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-4 pr-28 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
-            <BilingualInline jp="紹介文はまだありません。" kr="아직 등록된 소개 문구가 없습니다." />
-          </p>
-        )}
-        <HomeStaffSection staffMembers={staffMembers} isAdmin={isAdmin} />
-      </div>
+      {initialJp ? (
+        <Bilingual
+          as="div"
+          className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          jp={<p className="whitespace-pre-wrap text-sm leading-7 text-zinc-600 dark:text-zinc-300">{initialJp}</p>}
+          kr={<p className="mt-2 whitespace-pre-wrap text-sm leading-7">{initialKr}</p>}
+        />
+      ) : (
+        <p className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-4 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
+          <BilingualInline jp="紹介文はまだありません。" kr="아직 등록된 소개 문구가 없습니다." />
+        </p>
+      )}
     </section>
   );
 }
