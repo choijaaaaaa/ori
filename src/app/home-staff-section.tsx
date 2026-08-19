@@ -123,7 +123,7 @@ function StaffMemberForm({
           <img
             src={imagePreviewUrl || imageUrl}
             alt="プレビュー / 미리보기"
-            className="h-20 w-20 rounded-full object-cover"
+            className="aspect-[4/3] w-40 rounded-lg object-cover"
           />
         )}
       </div>
@@ -323,15 +323,15 @@ export default function HomeStaffSection({
               }
 
               const card = (
-                <div className="flex items-start gap-3">
+                <div className="flex flex-col gap-2">
                   {member.imageUrl ? (
                     <img
                       src={member.imageUrl}
                       alt={member.name}
-                      className="h-14 w-14 shrink-0 rounded-full object-cover"
+                      className="aspect-[4/3] w-full rounded-lg object-cover"
                     />
                   ) : (
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xl dark:bg-zinc-800">
+                    <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-amber-100 text-4xl dark:bg-zinc-800">
                       🦆
                     </div>
                   )}
