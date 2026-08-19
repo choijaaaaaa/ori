@@ -6,6 +6,7 @@ export interface EventPost {
   eventDate?: string; // 모임 일자 (YYYY-MM-DD, 선택)
   coverPhotoUrl?: string; // 카드 대표 사진
   venueMapUrl?: string; // 지도 앱(구글맵 등)에서 공유한 위치 링크 — 오시는 길의 주된 안내 수단
+  venueImageUrl?: string; // 지도 캡처 등 오시는 길 안내 이미지 (선택)
   venueInfo?: string; // 지도 링크에 곁들이는 보충 설명 (선택)
   capacity?: number; // 정원 (선택, 없으면 무제한)
   closed: boolean; // 관리자가 수동으로 마감했는지

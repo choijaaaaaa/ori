@@ -16,12 +16,14 @@ export default function HomeEventsSection({
   photos,
   isAdmin,
   recentVenueMapUrl,
+  recentVenueImageUrl,
   recentVenueInfo,
 }: {
   events: EventPost[];
   photos: Photo[];
   isAdmin: boolean;
   recentVenueMapUrl?: string;
+  recentVenueImageUrl?: string;
   recentVenueInfo?: string;
 }) {
   const router = useRouter();
@@ -136,6 +138,7 @@ export default function HomeEventsSection({
                     editingEvent={item}
                     onDone={() => setEditingId(null)}
                     recentVenueMapUrl={recentVenueMapUrl}
+                    recentVenueImageUrl={recentVenueImageUrl}
                     recentVenueInfo={recentVenueInfo}
                   />
                 </li>
@@ -223,6 +226,7 @@ export default function HomeEventsSection({
           <EventForm
             photos={photos}
             recentVenueMapUrl={recentVenueMapUrl}
+            recentVenueImageUrl={recentVenueImageUrl}
             recentVenueInfo={recentVenueInfo}
             onDone={() => setIsAdding(false)}
           />

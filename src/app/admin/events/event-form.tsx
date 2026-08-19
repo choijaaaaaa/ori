@@ -15,12 +15,14 @@ export default function EventForm({
   editingEvent,
   onDone,
   recentVenueMapUrl,
+  recentVenueImageUrl,
   recentVenueInfo,
 }: {
   photos: Photo[];
   editingEvent?: EventPost;
   onDone?: () => void;
   recentVenueMapUrl?: string; // 같은 장소를 계속 쓰는 경우가 많아 직전 회차 지도 링크를 빠르게 불러올 수 있게
+  recentVenueImageUrl?: string; // 직전 회차에 올렸던 오시는 길 이미지를 재사용할 수 있게
   recentVenueInfo?: string; // 장소가 매번 바뀌어도 직전 회차 안내문을 불러와 빠르게 고쳐 쓸 수 있게
 }) {
   const router = useRouter();
@@ -35,6 +37,10 @@ export default function EventForm({
   const [coverImageBlob, setCoverImageBlob] = useState<Blob | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [venueMapUrl, setVenueMapUrl] = useState(editingEvent?.venueMapUrl ?? "");
+  const [venueImageUrl, setVenueImageUrl] = useState(editingEvent?.venueImageUrl ?? ""); // 기존/재사용 이미지 URL
+  const [venueImagePreviewUrl, setVenueImagePreviewUrl] = useState(""); // 새로 업로드할 이미지 미리보기
+  const [venueImageBlob, setVenueImageBlob] = useState<Blob | null>(null);
+  const [isProcessingVenueImage, setIsProcessingVenueImage] = useState(false);
   const [venueInfo, setVenueInfo] = useState(editingEvent?.venueInfo ?? "");
   const [capacity, setCapacity] = useState(
     editingEvent?.capacity != null ? String(editingEvent.capacity) : ""
@@ -73,6 +79,30 @@ export default function EventForm({
     }
   }
 
+  async function handleVenueImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError("파일 용량이 너무 큽니다 (최대 15MB).");
+      event.target.value = "";
+      return;
+    }
+
+    setError(null);
+    setIsProcessingVenueImage(true);
+    try {
+      const { blob, previewUrl } = await resizeImageFile(file);
+      setVenueImageUrl("");
+      setVenueImageBlob(blob);
+      setVenueImagePreviewUrl(previewUrl);
+    } catch {
+      setError("이미지를 처리하는 중 오류가 발생했습니다.");
+    } finally {
+      setIsProcessingVenueImage(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -80,6 +110,7 @@ export default function EventForm({
 
     try {
       const finalCoverUrl = coverImageBlob ? await uploadImage(coverImageBlob) : coverPhotoUrl;
+      const finalVenueImageUrl = venueImageBlob ? await uploadImage(venueImageBlob) : venueImageUrl;
 
       const res = await fetch(
         isEditMode ? `/api/events/${editingEvent!.id}` : "/api/events",
@@ -95,6 +126,7 @@ export default function EventForm({
                   eventDate: eventDate.trim() === "" ? null : eventDate,
                   coverPhotoUrl: finalCoverUrl || null,
                   venueMapUrl: venueMapUrl.trim() === "" ? null : venueMapUrl,
+                  venueImageUrl: finalVenueImageUrl || null,
                   venueInfo: venueInfo.trim() === "" ? null : venueInfo,
                   capacity: capacity.trim() === "" ? null : Number(capacity),
                   closed,
@@ -105,6 +137,7 @@ export default function EventForm({
                   eventDate: eventDate || undefined,
                   coverPhotoUrl: finalCoverUrl || undefined,
                   venueMapUrl: venueMapUrl || undefined,
+                  venueImageUrl: finalVenueImageUrl || undefined,
                   venueInfo: venueInfo || undefined,
                   capacity: capacity.trim() === "" ? undefined : Number(capacity),
                   closed,
@@ -129,6 +162,9 @@ export default function EventForm({
         setCoverPreviewUrl("");
         setCoverImageBlob(null);
         setVenueMapUrl("");
+        setVenueImageUrl("");
+        setVenueImagePreviewUrl("");
+        setVenueImageBlob(null);
         setVenueInfo("");
         setCapacity("");
         setClosed(false);
@@ -289,6 +325,46 @@ export default function EventForm({
         </p>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <BilingualInline jp="アクセス画像（地図の画面キャプチャなど・任意）" kr="오시는 길 이미지 (지도 캡처 등, 선택)" />
+          </span>
+          {recentVenueImageUrl && recentVenueImageUrl !== venueImageUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setVenueImageBlob(null);
+                setVenueImagePreviewUrl("");
+                setVenueImageUrl(recentVenueImageUrl);
+              }}
+              className="rounded-full border border-amber-300 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+            >
+              <BilingualInline jp="前回の画像をコピー" kr="이전 회차 이미지 복사" />
+            </button>
+          )}
+        </div>
+        <input
+          id={`${uid}-venue-image-file`}
+          type="file"
+          accept="image/*"
+          onChange={handleVenueImageFileChange}
+          className="text-sm text-zinc-700 file:mr-3 file:rounded-full file:border-0 file:bg-amber-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-amber-800 dark:text-zinc-300 dark:file:bg-amber-900/40 dark:file:text-amber-300"
+        />
+        {isProcessingVenueImage && (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <BilingualInline jp="画像を処理中..." kr="이미지 처리 중..." />
+          </p>
+        )}
+        {(venueImagePreviewUrl || venueImageUrl) && !isProcessingVenueImage && (
+          <img
+            src={venueImagePreviewUrl || venueImageUrl}
+            alt="プレビュー / 미리보기"
+            className="h-24 w-24 rounded-lg object-cover"
+          />
+        )}
+      </div>
+
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <label htmlFor={`${uid}-venue`} className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -356,7 +432,7 @@ export default function EventForm({
       <div className="mt-1 flex items-center gap-2">
         <button
           type="submit"
-          disabled={isSubmitting || isProcessingImage}
+          disabled={isSubmitting || isProcessingImage || isProcessingVenueImage}
           aria-label={isEditMode ? "イベント更新 / 이벤트 수정" : "イベント投稿 / 이벤트 등록"}
           className="inline-flex items-center justify-center rounded-full bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
         >

@@ -29,6 +29,7 @@ export async function POST(request: Request) {
   const eventDate = typeof body?.eventDate === "string" ? body.eventDate.trim() : "";
   const coverPhotoUrl = typeof body?.coverPhotoUrl === "string" ? body.coverPhotoUrl.trim() : "";
   const venueMapUrl = typeof body?.venueMapUrl === "string" ? body.venueMapUrl.trim() : "";
+  const venueImageUrl = typeof body?.venueImageUrl === "string" ? body.venueImageUrl.trim() : "";
   const venueInfo = typeof body?.venueInfo === "string" ? body.venueInfo.trim() : "";
   const capacity =
     typeof body?.capacity === "number" && Number.isFinite(body.capacity) && body.capacity > 0
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
       eventDate: eventDate || undefined,
       coverPhotoUrl: coverPhotoUrl || undefined,
       venueMapUrl: venueMapUrl || undefined,
+      venueImageUrl: venueImageUrl || undefined,
       venueInfo: venueInfo || undefined,
       capacity,
       closed,

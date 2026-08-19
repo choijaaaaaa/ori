@@ -39,6 +39,7 @@ export default async function AdminEventsPage() {
     ? [...data.items].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : [];
   const recentVenueMapUrl = sortedByRecent.find((e) => e.venueMapUrl)?.venueMapUrl;
+  const recentVenueImageUrl = sortedByRecent.find((e) => e.venueImageUrl)?.venueImageUrl;
   const recentVenueInfo = sortedByRecent.find((e) => e.venueInfo)?.venueInfo;
 
   return (
@@ -53,6 +54,7 @@ export default async function AdminEventsPage() {
       <EventForm
         photos={data.ok ? data.photos : []}
         recentVenueMapUrl={recentVenueMapUrl}
+        recentVenueImageUrl={recentVenueImageUrl}
         recentVenueInfo={recentVenueInfo}
       />
 
@@ -86,6 +88,7 @@ export default async function AdminEventsPage() {
             events={data.items}
             photos={data.photos}
             recentVenueMapUrl={recentVenueMapUrl}
+            recentVenueImageUrl={recentVenueImageUrl}
             recentVenueInfo={recentVenueInfo}
           />
         )}

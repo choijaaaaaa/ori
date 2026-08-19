@@ -13,11 +13,13 @@ export default function EventList({
   events,
   photos,
   recentVenueMapUrl,
+  recentVenueImageUrl,
   recentVenueInfo,
 }: {
   events: EventWithApplicants[];
   photos: Photo[];
   recentVenueMapUrl?: string;
+  recentVenueImageUrl?: string;
   recentVenueInfo?: string;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -35,6 +37,7 @@ export default function EventList({
                 editingEvent={item}
                 onDone={() => setEditingId(null)}
                 recentVenueMapUrl={recentVenueMapUrl}
+                recentVenueImageUrl={recentVenueImageUrl}
                 recentVenueInfo={recentVenueInfo}
               />
             </li>

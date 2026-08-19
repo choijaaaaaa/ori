@@ -21,6 +21,7 @@ function mapEvent(row: {
   event_date: string | null;
   cover_photo_url: string | null;
   venue_map_url: string | null;
+  venue_image_url: string | null;
   venue_info: string | null;
   capacity: number | null;
   closed: boolean;
@@ -34,6 +35,7 @@ function mapEvent(row: {
     eventDate: row.event_date ?? undefined,
     coverPhotoUrl: row.cover_photo_url ?? undefined,
     venueMapUrl: row.venue_map_url ?? undefined,
+    venueImageUrl: row.venue_image_url ?? undefined,
     venueInfo: row.venue_info ?? undefined,
     capacity: row.capacity ?? undefined,
     closed: row.closed,
@@ -174,6 +176,7 @@ export class SupabaseRepository implements DataRepository {
     eventDate?: string;
     coverPhotoUrl?: string;
     venueMapUrl?: string;
+    venueImageUrl?: string;
     venueInfo?: string;
     capacity?: number;
     closed?: boolean;
@@ -194,6 +197,7 @@ export class SupabaseRepository implements DataRepository {
         event_date: input.eventDate ?? null,
         cover_photo_url: input.coverPhotoUrl ?? null,
         venue_map_url: input.venueMapUrl ?? null,
+        venue_image_url: input.venueImageUrl ?? null,
         venue_info: input.venueInfo ?? null,
         capacity: input.capacity ?? null,
         closed: input.closed ?? false,
@@ -213,6 +217,7 @@ export class SupabaseRepository implements DataRepository {
       eventDate: string | null;
       coverPhotoUrl: string | null;
       venueMapUrl: string | null;
+      venueImageUrl: string | null;
       venueInfo: string | null;
       capacity: number | null;
       closed: boolean;
@@ -224,6 +229,7 @@ export class SupabaseRepository implements DataRepository {
     if (input.eventDate !== undefined) patch.event_date = input.eventDate;
     if (input.coverPhotoUrl !== undefined) patch.cover_photo_url = input.coverPhotoUrl;
     if (input.venueMapUrl !== undefined) patch.venue_map_url = input.venueMapUrl;
+    if (input.venueImageUrl !== undefined) patch.venue_image_url = input.venueImageUrl;
     if (input.venueInfo !== undefined) patch.venue_info = input.venueInfo;
     if (input.capacity !== undefined) patch.capacity = input.capacity;
     if (input.closed !== undefined) patch.closed = input.closed;

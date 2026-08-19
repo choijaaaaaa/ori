@@ -34,6 +34,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if ("venueMapUrl" in body)
     patch.venueMapUrl =
       typeof body.venueMapUrl === "string" && body.venueMapUrl.trim() ? body.venueMapUrl.trim() : null;
+  if ("venueImageUrl" in body)
+    patch.venueImageUrl =
+      typeof body.venueImageUrl === "string" && body.venueImageUrl.trim() ? body.venueImageUrl.trim() : null;
   if ("venueInfo" in body)
     patch.venueInfo = typeof body.venueInfo === "string" && body.venueInfo.trim() ? body.venueInfo.trim() : null;
   if ("capacity" in body)

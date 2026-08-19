@@ -43,6 +43,7 @@ export default async function Home() {
     ? [...data.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : [];
   const recentVenueMapUrl = sortedByRecent.find((e) => e.venueMapUrl)?.venueMapUrl;
+  const recentVenueImageUrl = sortedByRecent.find((e) => e.venueImageUrl)?.venueImageUrl;
   const recentVenueInfo = sortedByRecent.find((e) => e.venueInfo)?.venueInfo;
 
   return (
@@ -120,6 +121,7 @@ export default async function Home() {
               photos={data.photos}
               isAdmin={isAdmin}
               recentVenueMapUrl={recentVenueMapUrl}
+              recentVenueImageUrl={recentVenueImageUrl}
               recentVenueInfo={recentVenueInfo}
             />
             <HomePhotosSection photos={data.photos} isAdmin={isAdmin} />
