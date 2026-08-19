@@ -35,10 +35,9 @@ export default function HomeAboutSection({
     if (result !== null) setKr(result);
   }
 
-  // 일본어 입력을 마치고 다른 곳을 클릭하면 자동으로 번역해 채운다. 한국어를 이미
-  // 직접 써놓은 경우는 실수로 덮어쓰지 않도록 비어있을 때만 동작한다.
+  // 일본어 입력을 마치고 다른 곳을 클릭하면 자동으로 번역해서 한국어를 최신 상태로 맞춘다.
   function handleJpBlur() {
-    if (!kr.trim() && jp.trim()) handleAutoTranslate();
+    if (jp.trim()) handleAutoTranslate();
   }
 
   // 방문자에게는 내용이 없으면 섹션 자체를 아예 숨긴다.

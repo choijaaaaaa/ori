@@ -75,10 +75,9 @@ export default function FieldForm({
     if (result !== null) setLabelKr(result);
   }
 
-  // 일본어 입력을 마치고 다른 곳을 클릭하면 자동으로 번역해 채운다. 한국어를 이미
-  // 직접 써놓은 경우는 실수로 덮어쓰지 않도록 비어있을 때만 동작한다.
+  // 일본어 입력을 마치고 다른 곳을 클릭하면 자동으로 번역해서 한국어를 최신 상태로 맞춘다.
   function handleLabelJpBlur() {
-    if (!labelKr.trim() && labelJp.trim()) handleAutoTranslateLabel();
+    if (labelJp.trim()) handleAutoTranslateLabel();
   }
 
   async function handleAutoTranslateHelp() {
@@ -87,7 +86,7 @@ export default function FieldForm({
   }
 
   function handleHelpJpBlur() {
-    if (!helpKr.trim() && helpJp.trim()) handleAutoTranslateHelp();
+    if (helpJp.trim()) handleAutoTranslateHelp();
   }
 
   async function handleAutoTranslateOption(index: number) {
@@ -97,7 +96,7 @@ export default function FieldForm({
 
   function handleOptionJpBlur(index: number) {
     const opt = options[index];
-    if (opt && !opt.kr.trim() && opt.jp.trim()) handleAutoTranslateOption(index);
+    if (opt && opt.jp.trim()) handleAutoTranslateOption(index);
   }
 
   function addOption() {
