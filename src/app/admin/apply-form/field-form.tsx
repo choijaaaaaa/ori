@@ -359,7 +359,7 @@ export default function FieldForm({
                 onBlur={() => handleOptionJpBlur(index)}
                 placeholder="日本語"
                 aria-label={`選択肢${index + 1}（日本語） / 선택지 ${index + 1} (일본어)`}
-                className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
               />
               <input
                 type="text"
@@ -367,7 +367,7 @@ export default function FieldForm({
                 onChange={(e) => updateOption(index, "kr", e.target.value)}
                 placeholder="한국어"
                 aria-label={`選択肢${index + 1}（韓国語） / 선택지 ${index + 1} (한국어)`}
-                className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
               />
               <button
                 type="button"

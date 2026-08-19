@@ -30,7 +30,7 @@ export function AdminAccessButton({
 
   if (authenticated && previewMode) {
     return (
-      <div className="fixed right-4 top-4 z-50">
+      <div className="fixed right-2 top-2 z-50 max-w-[calc(100vw-1rem)] sm:right-4 sm:top-4">
         <button
           type="button"
           onClick={() => {
@@ -38,16 +38,16 @@ export function AdminAccessButton({
             router.refresh();
           }}
           aria-label="プレビューを終了して管理者モードに戻る / 미리보기를 끝내고 관리자 모드로 돌아가기"
-          className="inline-flex items-center justify-center rounded-full bg-zinc-700 px-4 py-2 text-xs font-semibold text-white shadow-md transition-colors hover:bg-zinc-800"
+          className="inline-flex items-center justify-center rounded-full bg-zinc-700 px-3 py-1.5 text-[11px] leading-tight text-white shadow-md transition-colors hover:bg-zinc-800 sm:px-4 sm:py-2 sm:text-xs"
         >
-          <BilingualInline jp="プレビュー中・管理者に戻る" kr="미리보기 중 · 관리자로 돌아가기" />
+          <BilingualInline jp="プレビュー中・戻る" kr="미리보기 중 · 돌아가기" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="fixed right-4 top-4 z-50 flex items-center gap-2">
+    <div className="fixed right-2 top-2 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-1.5 sm:right-4 sm:top-4 sm:flex-row sm:items-center sm:gap-2">
       {authenticated && (
         <button
           type="button"
@@ -56,7 +56,7 @@ export function AdminAccessButton({
             router.refresh();
           }}
           aria-label="訪問者の画面をプレビュー / 방문자 화면 미리보기"
-          className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold text-amber-700 shadow-md transition-colors hover:bg-amber-50 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-300 dark:hover:bg-amber-950/40"
+          className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-3 py-1.5 text-[11px] text-amber-700 shadow-md transition-colors hover:bg-amber-50 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-300 dark:hover:bg-amber-950/40 sm:px-4 sm:py-2 sm:text-xs"
         >
           <BilingualInline jp="プレビュー" kr="미리보기" />
         </button>
@@ -67,7 +67,7 @@ export function AdminAccessButton({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="管理者ページを新しいタブで開く / 관리자 페이지를 새 탭으로 열기"
-          className="inline-flex items-center justify-center rounded-full bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition-colors hover:bg-amber-700"
+          className="inline-flex items-center justify-center rounded-full bg-amber-600 px-3 py-1.5 text-[11px] text-white shadow-md transition-colors hover:bg-amber-700 sm:px-4 sm:py-2 sm:text-xs"
         >
           <BilingualInline jp="管理者ページ" kr="관리자 페이지" />
         </a>
@@ -75,7 +75,7 @@ export function AdminAccessButton({
         <a
           href="/admin/login"
           aria-label="管理者ログイン / 관리자 로그인"
-          className="inline-flex items-center justify-center rounded-full bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition-colors hover:bg-amber-700"
+          className="inline-flex items-center justify-center rounded-full bg-amber-600 px-3 py-1.5 text-[11px] text-white shadow-md transition-colors hover:bg-amber-700 sm:px-4 sm:py-2 sm:text-xs"
         >
           <BilingualInline jp="管理者ログイン" kr="관리자 로그인" />
         </a>
