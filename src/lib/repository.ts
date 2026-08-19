@@ -10,6 +10,7 @@ import type {
   ApplyFormField,
   ApplyFormFieldType,
   ApplyFormFieldOption,
+  StaffMember,
 } from "./types";
 
 export interface DataRepository {
@@ -102,6 +103,15 @@ export interface DataRepository {
   ): Promise<ApplyFormField>;
   deleteApplyFormField(id: string): Promise<void>;
   reorderApplyFormFields(orderedIds: string[]): Promise<void>;
+
+  listStaffMembers(): Promise<StaffMember[]>;
+  createStaffMember(input: { name: string; imageUrl?: string; bio?: string }): Promise<StaffMember>;
+  updateStaffMember(
+    id: string,
+    input: Partial<{ name: string; imageUrl: string | null; bio: string }>
+  ): Promise<StaffMember>;
+  deleteStaffMember(id: string): Promise<void>;
+  reorderStaffMembers(orderedIds: string[]): Promise<void>;
 }
 
 export const repository: DataRepository = new SupabaseRepository();

@@ -12,6 +12,7 @@ import type {
   ApplyFormField,
   ApplyFormFieldType,
   ApplyFormFieldOption,
+  StaffMember,
 } from "./types";
 
 function mapEvent(row: {
@@ -143,6 +144,24 @@ function mapApplyFormField(row: {
     required: row.required,
     requireAll: row.require_all,
     imageUrl: row.image_url ?? undefined,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+  };
+}
+
+function mapStaffMember(row: {
+  id: string;
+  name: string;
+  image_url: string | null;
+  bio: string | null;
+  sort_order: number;
+  created_at: string;
+}): StaffMember {
+  return {
+    id: row.id,
+    name: row.name,
+    imageUrl: row.image_url ?? undefined,
+    bio: row.bio ?? undefined,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
   };
@@ -585,6 +604,84 @@ export class SupabaseRepository implements DataRepository {
       orderedIds.map((id, index) =>
         supabase
           .from("apply_form_fields")
+          .update({ sort_order: (index + 1) * 10 })
+          .eq("id", id)
+      )
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
+  }
+
+  async listStaffMembers(): Promise<StaffMember[]> {
+    const { data, error } = await supabase
+      .from("staff_members")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapStaffMember);
+  }
+
+  async createStaffMember(input: {
+    name: string;
+    imageUrl?: string;
+    bio?: string;
+  }): Promise<StaffMember> {
+    const { data: maxRow } = await supabase
+      .from("staff_members")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextSortOrder = (maxRow?.sort_order ?? 0) + 10;
+
+    const { data, error } = await supabase
+      .from("staff_members")
+      .insert({
+        name: input.name,
+        image_url: input.imageUrl ?? null,
+        bio: input.bio ?? "",
+        sort_order: nextSortOrder,
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return mapStaffMember(data);
+  }
+
+  async updateStaffMember(
+    id: string,
+    input: Partial<{ name: string; imageUrl: string | null; bio: string }>
+  ): Promise<StaffMember> {
+    const patch: Record<string, unknown> = {};
+    if (input.name !== undefined) patch.name = input.name;
+    if (input.imageUrl !== undefined) patch.image_url = input.imageUrl;
+    if (input.bio !== undefined) patch.bio = input.bio;
+
+    const { data, error } = await supabase
+      .from("staff_members")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) {
+      if (error.code === "PGRST116" || error.code === "22P02") {
+        throw new NotFoundError("수정하려는 스태프를 찾을 수 없습니다.");
+      }
+      throw new Error(error.message);
+    }
+    return mapStaffMember(data);
+  }
+
+  async deleteStaffMember(id: string): Promise<void> {
+    const { error } = await supabase.from("staff_members").delete().eq("id", id);
+    if (error && error.code !== "22P02") throw new Error(error.message);
+  }
+
+  async reorderStaffMembers(orderedIds: string[]): Promise<void> {
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("staff_members")
           .update({ sort_order: (index + 1) * 10 })
           .eq("id", id)
       )

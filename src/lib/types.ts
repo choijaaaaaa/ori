@@ -88,3 +88,13 @@ export interface ApplyFormField {
   sortOrder: number;
   createdAt: string;
 }
+
+// "Staff 소개" 팝업에 보여줄 운영진 소개 카드 — 관리자가 추가/수정/삭제/순서변경 가능.
+export interface StaffMember {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  bio?: string;
+  sortOrder: number;
+  createdAt: string;
+}

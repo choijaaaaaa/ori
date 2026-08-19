@@ -28,12 +28,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ key:
   const valueJp = typeof body?.valueJp === "string" ? body.valueJp.trim() : "";
   const valueKr = typeof body?.valueKr === "string" ? body.valueKr.trim() : "";
 
-  if (!valueJp) {
-    return NextResponse.json(
-      { error: { code: "INVALID_INPUT", message: "일본어 문구를 입력해주세요." } },
-      { status: 400 }
-    );
-  }
+  // 비워서 저장하는 것도 허용한다 — 예: 홈 화면 소개 문구는 비우면 섹션 자체가 숨겨지는
+  // "삭제"로 쓰인다. (apply_intro처럼 항상 텍스트가 있어야 하는 키는 해당 관리자 폼의
+  // required 속성으로 빈 값 제출을 막는다.)
 
   try {
     const updated = await repository.upsertSiteText(key, { valueJp, valueKr });

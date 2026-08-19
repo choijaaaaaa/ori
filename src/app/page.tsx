@@ -10,7 +10,9 @@ import { DecorativeBackground } from "@/components/decorative-background";
 import HomeEventsSection from "./home-events-section";
 import HomePhotosSection from "./home-photos-section";
 import HomeInstagramSection from "./home-instagram-section";
+import HomeAboutSection from "./home-about-section";
 import { fetchRecentInstagramPosts, isInstagramConfigured } from "@/lib/instagram";
+import { ABOUT_INTRO_KEY } from "@/lib/site-text-defaults";
 import type { EventPost, Photo } from "@/lib/types";
 
 // 관리자가 추가한 데이터가 즉시 반영돼야 하므로 정적 프리렌더링을 막는다(빌드 시점 데이터로 캐시되면 안 됨).
@@ -33,10 +35,12 @@ async function loadHomeData(): Promise<
 }
 
 export default async function Home() {
-  const [data, isAdmin, instagramPosts] = await Promise.all([
+  const [data, isAdmin, instagramPosts, aboutText, staffMembers] = await Promise.all([
     loadHomeData(),
     isAdminAuthenticated(),
     fetchRecentInstagramPosts(),
+    repository.getSiteText(ABOUT_INTRO_KEY).catch(() => null),
+    repository.listStaffMembers().catch(() => []),
   ]);
   // 장소가 매번 바뀌어 매 회차 새로 입력해야 하니, 가장 최근에 등록한 안내를 불러와 빠르게 고쳐 쓸 수 있게 한다.
   const sortedByRecent = data.ok
@@ -92,27 +96,12 @@ export default async function Home() {
           </p>
         )}
 
-        <section aria-labelledby="about-heading" className="flex flex-col gap-4">
-          <Bilingual
-            as="h2"
-            jp={<span id="about-heading" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">団体紹介</span>}
-            kr="소개"
-          />
-          <Bilingual
-            as="div"
-            className="rounded-xl border border-amber-100 bg-white px-5 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-            jp={
-              <p className="text-sm leading-7 text-zinc-600 dark:text-zinc-300">
-                日韓交流会は、大阪梅田を拠点に活動する言語交流コミュニティです。日本語を学びたい方、韓国語を学びたい方が気軽に集まり、言語交換やゲーム、フリートークを通じて交流しています。初めての方も日本語だけで参加いただけます。
-              </p>
-            }
-            kr={
-              <p className="mt-2 text-sm leading-7">
-                일한교류회는 오사카 우메다를 거점으로 활동하는 언어 교류 커뮤니티입니다. 일본어를 배우고 싶은 분, 한국어를 배우고 싶은 분이 편하게 모여 언어교환·게임·프리토크를 통해 교류합니다. 처음 오시는 분도 부담 없이 참여하실 수 있어요.
-              </p>
-            }
-          />
-        </section>
+        <HomeAboutSection
+          initialJp={aboutText?.valueJp ?? ""}
+          initialKr={aboutText?.valueKr ?? ""}
+          isAdmin={isAdmin}
+          staffMembers={staffMembers}
+        />
 
         {data.ok && (
           <>

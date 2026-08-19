@@ -84,6 +84,17 @@ create table if not exists site_texts (
   updated_at timestamptz not null default now()
 );
 
+-- "Staff 소개" 팝업에 보여줄 운영진 소개 카드 — 관리자가 추가/수정/삭제/순서변경 가능.
+create table if not exists staff_members (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  image_url text,
+  bio text not null default '',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists staff_members_sort_order_idx on staff_members (sort_order);
+
 alter table events enable row level security;
 alter table photos enable row level security;
 alter table survey_responses enable row level security;
@@ -92,4 +103,5 @@ alter table applications enable row level security;
 alter table admin_auth enable row level security;
 alter table site_texts enable row level security;
 alter table apply_form_fields enable row level security;
+alter table staff_members enable row level security;
 -- 서버(Route Handler)에서 service_role 키로만 접근하므로 별도 정책 없이 RLS로 기본 차단.
